@@ -1,0 +1,102 @@
+{
+  "projectType": "frontend",
+  "projectName": "Theme Gen",
+  "projectDescription": "A visual theme generator for creating accessible, shareable color palettes with WCAG contrast auditing.",
+  "theme": "willow",
+  "primaryColor": "#4F46E5",
+  "lightColor": "#818CF8",
+  "darkColor": "#6366F1",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/live-preview",
+              "features/contrast-auditing",
+              "features/smart-shuffle",
+              "features/color-locking",
+              "features/export",
+              "features/url-sharing"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/creating-themes",
+              "guides/accessibility",
+              "guides/exporting",
+              "guides/sharing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Context",
+            "pages": [
+              "api/theme-context"
+            ]
+          },
+          {
+            "group": "Color Utilities",
+            "pages": [
+              "api/color-utils",
+              "api/contrast",
+              "api/color-conversion"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "api/components/theme-customizer",
+              "api/components/color-picker",
+              "api/components/export-modal"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time theme preview with live updates",
+    "WCAG contrast ratio auditing (AA and AAA standards)",
+    "Smart random palette generator with locked color support",
+    "URL-based theme sharing and persistence",
+    "Multi-format export (CSS variables, Tailwind CSS v3/v4, SCSS)",
+    "Light and dark mode with independent palettes",
+    "Color locking system for preserving specific colors",
+    "EyeDropper API integration for screen color picking"
+  ],
+  "publicApiSurface": [
+    "ThemeProvider - React context provider for theme management",
+    "useTheme() - Hook for accessing theme state and actions",
+    "generateColorPalette() - Generate accessible color palette from base color",
+    "getContrastRatio() - Calculate WCAG contrast ratio between colors",
+    "getWCAGContrastResult() - Get detailed WCAG compliance results",
+    "adaptColorsForMode() - Adapt colors between light and dark modes",
+    "pickOnColor() - Calculate optimal text color for background",
+    "hexToRgb(), rgbToHex() - RGB conversion utilities",
+    "hexToHsl(), hslToHex() - HSL conversion utilities",
+    "mixOklch() - Mix colors in OKLCH color space",
+    "Theme type - TypeScript interface for theme structure",
+    "SavedTheme interface - Structure for saved user themes"
+  ]
+}
