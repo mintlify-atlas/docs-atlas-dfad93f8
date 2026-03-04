@@ -1,0 +1,347 @@
+---
+title: Accessibility Standards
+description: Understanding WCAG compliance and contrast requirements in Theme Gen
+icon: 'universal-access'
+---
+
+## WCAG Overview
+
+Theme Gen enforces Web Content Accessibility Guidelines (WCAG) to ensure your themes are usable by everyone, including people with visual impairments.
+
+## Contrast Ratio Requirements
+
+WCAG defines minimum contrast ratios between foreground and background colors. Theme Gen checks these automatically and helps you create compliant themes.
+
+### WCAG Levels
+
+<AccordionGroup>
+  <Accordion title="WCAG AA (Minimum)" icon="check-circle">
+    **Level AA** is the baseline accessibility standard most websites should meet:
+    
+    - **Normal text (< 18pt or < 14pt bold)** - 4.5:1 contrast ratio
+    - **Large text (≥ 18pt or ≥ 14pt bold)** - 3:1 contrast ratio
+    - **UI components** (buttons, form borders, focus indicators) - 3:1 contrast ratio
+
+    Most regulations and guidelines (including ADA compliance) require at least Level AA.
+  </Accordion>
+
+  <Accordion title="WCAG AAA (Enhanced)" icon="star">
+    **Level AAA** provides enhanced accessibility for users with low vision:
+    
+    - **Normal text (< 18pt or < 14pt bold)** - 7:1 contrast ratio
+    - **Large text (≥ 18pt or ≥ 14pt bold)** - 4.5:1 contrast ratio
+
+    While AAA is not required by most standards, it provides better readability for all users, especially on low-quality displays or in bright environments.
+  </Accordion>
+</AccordionGroup>
+
+## Theme Gen Contrast Requirements
+
+Theme Gen enforces specific contrast ratios based on how colors are used:
+
+```typescript
+// From ThemeCustomizer.tsx - Contrast audit definitions
+const contrastAuditDefinitions = [
+  {
+    id: "text/background",
+    label: "Text on Background",
+    foreground: "text",
+    background: "background",
+    min: 7,              // WCAG AAA for normal text
+    required: true,
+  },
+  {
+    id: "primary/background",
+    label: "Primary on Background",
+    foreground: "primary",
+    background: "background",
+    min: 3,              // WCAG AA for UI components
+    required: true,
+  },
+  {
+    id: "text/container",
+    label: "Text on Container",
+    foreground: "text",
+    background: "container",
+    min: 4.5,            // WCAG AA for normal text
+    required: true,
+  },
+  {
+    id: "accent/container",
+    label: "Accent on Container",
+    foreground: "accent",
+    background: "container",
+    min: 3,              // WCAG AA for UI components
+    required: true,
+  },
+  {
+    id: "accent/background",
+    label: "Accent on Background",
+    foreground: "accent",
+    background: "background",
+    min: 3,              // WCAG AA for UI components
+    required: true,
+  },
+];
+```
+
+### Why These Specific Ratios?
+
+<Steps>
+  <Step title="Text on Background - 7:1">
+    This is the **WCAG AAA** standard. Body text appears most frequently in your UI, so Theme Gen uses the strictest requirement to ensure maximum readability.
+
+    This high contrast benefits:
+    - Users with low vision or color blindness
+    - Reading on mobile devices in bright sunlight
+    - Older displays with lower contrast ratios
+    - Users with temporary vision impairment (eye strain, fatigue)
+  </Step>
+
+  <Step title="Primary on Background - 3:1">
+    Primary colors are used for buttons, links, and interactive elements. The **WCAG AA** standard of 3:1 ensures these UI components are distinguishable from the background.
+
+    ```typescript
+    // Theme Gen automatically nudges colors to meet minimum contrast
+    primary = nudgeForContrastOklch(primary, background, 3);
+    accent = nudgeForContrastOklch(accent, background, 3);
+    ```
+  </Step>
+
+  <Step title="Text on Container - 4.5:1">
+    Containers (cards, panels, modals) often have a different background than the main page. **WCAG AA** requires 4.5:1 for normal text, which Theme Gen enforces for text on containers.
+
+    This ensures text remains readable even when containers are close in color to the page background.
+  </Step>
+
+  <Step title="Accent Colors - 3:1">
+    Accent colors appear on both backgrounds and containers (badges, chips, highlights). Theme Gen validates both combinations to ensure your accent color is visible everywhere it's used.
+  </Step>
+</Steps>
+
+## Contrast Calculation
+
+Theme Gen uses the WCAG 2.1 relative luminance formula to calculate contrast ratios:
+
+```typescript
+// From colorUtils.ts
+function channelToLinear(value: number): number {
+  const normalized = value / 255;
+  return normalized <= 0.03928
+    ? normalized / 12.92
+    : ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+function relativeLuminance(color: string): number {
+  const { r, g, b } = hexToRgb(color);
+  const rLin = channelToLinear(r);
+  const gLin = channelToLinear(g);
+  const bLin = channelToLinear(b);
+
+  // ITU-R BT.709 coefficients for perceived brightness
+  return 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin;
+}
+
+export function getContrastRatio(
+  foreground: string, 
+  background: string
+): number {
+  const l1 = relativeLuminance(foreground);
+  const l2 = relativeLuminance(background);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+
+  return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(2));
+}
+```
+
+### Understanding the Formula
+
+<Accordion title="Why Not Just Use RGB Values?">
+  Human vision is not equally sensitive to all colors. We perceive green much more strongly than blue, and red falls in between.
+
+  The `relativeLuminance` function:
+  1. Converts RGB to linear space (removes gamma correction)
+  2. Applies ITU-R BT.709 coefficients that match human perception:
+     - **21.26%** red
+     - **71.52%** green (we're most sensitive to green)
+     - **7.22%** blue
+
+  This ensures the contrast ratio matches perceived contrast, not mathematical contrast.
+</Accordion>
+
+<Accordion title="The +0.05 Offset">
+  The formula adds 0.05 to both luminance values:
+
+  ```typescript
+  (lighter + 0.05) / (darker + 0.05)
+  ```
+
+  This prevents division by zero for pure black (luminance 0) and ensures that the contrast ratio of white on black is exactly 21:1, which matches testing conditions used in WCAG research.
+</Accordion>
+
+## Visual Indicators
+
+Theme Gen provides real-time feedback on accessibility:
+
+### Toolbar Badges
+
+Each color button displays a badge indicating its contrast status:
+
+- ✓ **Pass** - Meets or exceeds the required ratio (green indicator)
+- ✓ **Warn** - Passes but below 1.5× the target (yellow indicator)
+- ✗ **Fail** - Below the required ratio (red indicator)
+
+```typescript
+// From ThemeCustomizer.tsx
+function getBadgeStage(ratio: number, target: number): BadgeStage {
+  if (ratio >= target * 1.5) return "pass";  // Comfortable margin
+  if (ratio >= target) return "warn";        // Just passing
+  return "fail";                             // Below requirement
+}
+```
+
+Hover over any badge to see the exact contrast ratio and target.
+
+### Smart Shuffle Tooltip
+
+When you hover over the Smart Shuffle button, a tooltip displays:
+- Overall pass rate (e.g., "5/5 passing")
+- Detailed breakdown of all contrast checks
+- Color-coded ratios (green for pass, red for fail)
+
+<Info>
+  **Smart Shuffle ensures all required checks pass before accepting a palette.** It tries up to 24 different color combinations until it finds one that meets all accessibility requirements.
+</Info>
+
+## Automatic Contrast Adjustment
+
+Theme Gen doesn't just check contrast—it actively improves it:
+
+```typescript
+// From colorUtils.ts
+function nudgeForContrastOklch(
+  color: string,
+  against: string,
+  minimumRatio: number
+): string {
+  const [l, c, h] = chroma(color).oklch();
+  const againstLuminance = chroma(against).luminance();
+  
+  // Move toward white for dark backgrounds, toward black for light backgrounds
+  const direction = againstLuminance > 0.5 ? -0.03 : 0.03;
+
+  let currentL = l;
+  for (let step = 0; step < 25; step += 1) {
+    const candidate = chroma.oklch(
+      Math.max(0, Math.min(1, currentL)),
+      c,
+      h
+    );
+    if (getContrastRatio(candidate.hex(), against) >= minimumRatio) {
+      return candidate.hex();
+    }
+    currentL += direction;
+  }
+
+  return chroma.oklch(Math.max(0, Math.min(1, currentL)), c, h).hex();
+}
+```
+
+**How it works:**
+1. Checks if the current color meets the minimum ratio
+2. If not, adjusts lightness in small steps (3% per step)
+3. Preserves hue and chroma—only lightness changes
+4. Stops as soon as the ratio is met
+5. Maximum of 25 steps (75% lightness change)
+
+<Note>
+  This approach maintains your color's character while ensuring it's accessible. The algorithm uses OKLCH color space, which provides perceptually uniform adjustments—a 3% change in lightness looks the same whether you're adjusting a light color or a dark color.
+</Note>
+
+## Testing Your Theme
+
+### In Theme Gen
+
+1. **Check the Toolbar Badges** - All should show ✓ (checkmark)
+2. **Hover Smart Shuffle** - Should show "5/5 passing"
+3. **Review Preview Components** - Text should be crisp and easy to read
+4. **Test Both Modes** - Toggle light/dark and check both
+
+### External Tools
+
+For additional validation, you can use:
+
+- **WebAIM Contrast Checker** - https://webaim.org/resources/contrastchecker/
+- **Color.review** - https://color.review/
+- **Chrome DevTools** - Built-in contrast checker in the color picker
+
+<Accordion title="Using Chrome DevTools">
+  1. Right-click any text element and select "Inspect"
+  2. In the Styles panel, click the color swatch next to `color`
+  3. The color picker shows contrast ratios with AA/AAA indicators
+  4. Adjust colors directly and see real-time contrast updates
+</Accordion>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Why are my colors being changed?">
+    If your colors don't meet the required contrast ratios, Theme Gen automatically adjusts them. This only affects lightness—hue and saturation are preserved.
+
+    To maintain exact colors, ensure they meet these requirements:
+    - Text/Background: 7:1
+    - Primary/Background: 3:1
+    - Text/Container: 4.5:1
+    - Accent/Container and Accent/Background: 3:1
+  </Accordion>
+
+  <Accordion title="Can I use lower contrast ratios?">
+    Theme Gen enforces WCAG standards to ensure your themes are accessible. However, you can:
+    
+    1. Export your theme
+    2. Manually adjust colors in your code
+    3. Use CSS filters or opacity to reduce contrast
+
+    Keep in mind this may make your site less accessible and potentially violate legal requirements (like ADA in the US or EAA in the EU).
+  </Accordion>
+
+  <Accordion title="Why AAA for body text instead of AA?">
+    While WCAG AA (4.5:1) is the legal requirement, Theme Gen uses AAA (7:1) for body text because:
+    
+    - Body text is the most common element users interact with
+    - 7:1 ensures readability in all conditions (bright light, low-quality screens)
+    - It future-proofs your theme for stricter standards
+    - UI components still use AA (3:1), balancing accessibility with design flexibility
+
+    This approach gives you maximum design freedom for colors while ensuring excellent readability for text.
+  </Accordion>
+
+  <Accordion title="Do all colors need to be accessible?">
+    No. Only colors that appear together need sufficient contrast:
+    
+    - ✓ Text on background must pass
+    - ✓ Buttons/links on background must pass
+    - ✗ Primary and accent don't need contrast with each other
+    - ✗ Container and background don't need contrast (unless text appears on both)
+
+    Theme Gen's audit checks the specific combinations that matter for your UI.
+  </Accordion>
+</AccordionGroup>
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="WCAG 2.1 Guidelines" icon="book" href="https://www.w3.org/WAI/WCAG21/quickref/">
+    Official WCAG quick reference guide
+  </Card>
+  <Card title="WebAIM Contrast Checker" icon="magnifying-glass" href="https://webaim.org/resources/contrastchecker/">
+    Test specific color combinations
+  </Card>
+  <Card title="Creating Themes" icon="palette" href="/guides/creating-themes">
+    Learn how to create accessible themes
+  </Card>
+  <Card title="Exporting Themes" icon="download" href="/guides/exporting">
+    Export your accessible theme for production
+  </Card>
+</CardGroup>

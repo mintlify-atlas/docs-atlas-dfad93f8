@@ -1,0 +1,389 @@
+---
+title: 'Color Conversion'
+description: 'Functions for converting between color formats (Hex, RGB, HSL, HSV)'
+---
+
+## hexToRgb
+
+Converts a hexadecimal color string to an RGB object.
+
+```typescript
+function hexToRgb(hex: string): RGB
+```
+
+<ParamField path="hex" type="string" required>
+  Hex color string (with or without '#' prefix)
+</ParamField>
+
+<ResponseField name="return" type="RGB">
+  RGB object with r, g, b values (0-255)
+</ResponseField>
+
+### Example
+
+```typescript
+import { hexToRgb } from './colorUtils';
+
+const rgb = hexToRgb('#3b82f6');
+console.log(rgb); // { r: 59, g: 130, b: 246 }
+
+const rgb2 = hexToRgb('ff0000');
+console.log(rgb2); // { r: 255, g: 0, b: 0 }
+```
+
+---
+
+## rgbToHex
+
+Converts an RGB object to a hexadecimal color string.
+
+```typescript
+function rgbToHex(rgb: RGB): string
+```
+
+<ParamField path="rgb" type="RGB" required>
+  RGB object with r, g, b values (0-255)
+</ParamField>
+
+<ResponseField name="return" type="string">
+  Hex color string with '#' prefix
+</ResponseField>
+
+### Example
+
+```typescript
+import { rgbToHex } from './colorUtils';
+
+const hex = rgbToHex({ r: 59, g: 130, b: 246 });
+console.log(hex); // '#3b82f6'
+
+const hex2 = rgbToHex({ r: 255, g: 0, b: 0 });
+console.log(hex2); // '#ff0000'
+```
+
+---
+
+## rgbToHsl
+
+Converts an RGB object to an HSL object.
+
+```typescript
+function rgbToHsl(rgb: RGB): HSL
+```
+
+<ParamField path="rgb" type="RGB" required>
+  RGB object with r, g, b values (0-255)
+</ParamField>
+
+<ResponseField name="return" type="HSL">
+  HSL object with h (0-360), s (0-100), l (0-100) values
+</ResponseField>
+
+### Example
+
+```typescript
+import { rgbToHsl } from './colorUtils';
+
+const hsl = rgbToHsl({ r: 59, g: 130, b: 246 });
+console.log(hsl); // { h: 217, s: 91, l: 60 }
+```
+
+---
+
+## hslToRgb
+
+Converts an HSL object to an RGB object.
+
+```typescript
+function hslToRgb(hsl: HSL): RGB
+```
+
+<ParamField path="hsl" type="HSL" required>
+  HSL object with h (0-360), s (0-100), l (0-100) values
+</ParamField>
+
+<ResponseField name="return" type="RGB">
+  RGB object with r, g, b values (0-255)
+</ResponseField>
+
+### Example
+
+```typescript
+import { hslToRgb } from './colorUtils';
+
+const rgb = hslToRgb({ h: 217, s: 91, l: 60 });
+console.log(rgb); // { r: 59, g: 130, b: 246 }
+```
+
+---
+
+## hexToHsl
+
+Converts a hexadecimal color string directly to an HSL object.
+
+```typescript
+function hexToHsl(hex: string): HSL
+```
+
+<ParamField path="hex" type="string" required>
+  Hex color string (with or without '#' prefix)
+</ParamField>
+
+<ResponseField name="return" type="HSL">
+  HSL object with h (0-360), s (0-100), l (0-100) values
+</ResponseField>
+
+### Example
+
+```typescript
+import { hexToHsl } from './colorUtils';
+
+const hsl = hexToHsl('#3b82f6');
+console.log(hsl); // { h: 217, s: 91, l: 60 }
+```
+
+---
+
+## hslToHex
+
+Converts an HSL object directly to a hexadecimal color string.
+
+```typescript
+function hslToHex(hsl: HSL): string
+```
+
+<ParamField path="hsl" type="HSL" required>
+  HSL object with h (0-360), s (0-100), l (0-100) values
+</ParamField>
+
+<ResponseField name="return" type="string">
+  Hex color string with '#' prefix
+</ResponseField>
+
+### Example
+
+```typescript
+import { hslToHex } from './colorUtils';
+
+const hex = hslToHex({ h: 217, s: 91, l: 60 });
+console.log(hex); // '#3b82f6'
+```
+
+---
+
+## rgbToHsv
+
+Converts an RGB object to an HSV (Hue, Saturation, Value) object.
+
+```typescript
+function rgbToHsv(rgb: RGB): HSV
+```
+
+<ParamField path="rgb" type="RGB" required>
+  RGB object with r, g, b values (0-255)
+</ParamField>
+
+<ResponseField name="return" type="HSV">
+  HSV object with h (0-360), s (0-100), v (0-100) values
+</ResponseField>
+
+### Example
+
+```typescript
+import { rgbToHsv } from './colorUtils';
+
+const hsv = rgbToHsv({ r: 59, g: 130, b: 246 });
+console.log(hsv); // { h: 217, s: 76, v: 96 }
+```
+
+---
+
+## hsvToRgb
+
+Converts an HSV object to an RGB object.
+
+```typescript
+function hsvToRgb(hsv: HSV): RGB
+```
+
+<ParamField path="hsv" type="HSV" required>
+  HSV object with h (0-360), s (0-100), v (0-100) values
+</ParamField>
+
+<ResponseField name="return" type="RGB">
+  RGB object with r, g, b values (0-255)
+</ResponseField>
+
+### Example
+
+```typescript
+import { hsvToRgb } from './colorUtils';
+
+const rgb = hsvToRgb({ h: 217, s: 76, v: 96 });
+console.log(rgb); // { r: 59, g: 130, b: 245 }
+```
+
+---
+
+## getColorName
+
+Finds the nearest named color for any given hex color using the nearest-color algorithm.
+
+```typescript
+const getColorName: (color: string) => { name: string; value: string; }
+```
+
+<ParamField path="color" type="string" required>
+  Hex color string (with or without '#' prefix)
+</ParamField>
+
+<ResponseField name="return" type="{ name: string; value: string }">
+  Object containing the nearest color's name and hex value
+</ResponseField>
+
+### Example
+
+```typescript
+import { getColorName } from './colorUtils';
+
+const result = getColorName('#3b82f6');
+console.log(result); // { name: 'Dodger Blue', value: '#1e90ff' }
+
+const result2 = getColorName('#ef4444');
+console.log(result2); // { name: 'Red', value: '#ff0000' }
+
+console.log(result2.name); // 'Red'
+```
+
+---
+
+## Types
+
+### RGB
+
+Interface representing a color in RGB color space.
+
+```typescript
+interface RGB {
+  r: number; // Red channel (0-255)
+  g: number; // Green channel (0-255)
+  b: number; // Blue channel (0-255)
+}
+```
+
+<ResponseField name="r" type="number">
+  Red channel value (0-255)
+</ResponseField>
+
+<ResponseField name="g" type="number">
+  Green channel value (0-255)
+</ResponseField>
+
+<ResponseField name="b" type="number">
+  Blue channel value (0-255)
+</ResponseField>
+
+### Example
+
+```typescript
+const red: RGB = { r: 255, g: 0, b: 0 };
+const blue: RGB = { r: 59, g: 130, b: 246 };
+```
+
+---
+
+### HSL
+
+Interface representing a color in HSL (Hue, Saturation, Lightness) color space.
+
+```typescript
+interface HSL {
+  h: number; // Hue (0-360)
+  s: number; // Saturation (0-100)
+  l: number; // Lightness (0-100)
+}
+```
+
+<ResponseField name="h" type="number">
+  Hue in degrees (0-360)
+</ResponseField>
+
+<ResponseField name="s" type="number">
+  Saturation percentage (0-100)
+</ResponseField>
+
+<ResponseField name="l" type="number">
+  Lightness percentage (0-100)
+</ResponseField>
+
+### Example
+
+```typescript
+const hsl: HSL = { h: 217, s: 91, l: 60 };
+```
+
+---
+
+### HSV
+
+Interface representing a color in HSV (Hue, Saturation, Value) color space.
+
+```typescript
+export interface HSV {
+  h: number; // Hue (0-360)
+  s: number; // Saturation (0-100)
+  v: number; // Value/Brightness (0-100)
+}
+```
+
+<ResponseField name="h" type="number">
+  Hue in degrees (0-360)
+</ResponseField>
+
+<ResponseField name="s" type="number">
+  Saturation percentage (0-100)
+</ResponseField>
+
+<ResponseField name="v" type="number">
+  Value/brightness percentage (0-100)
+</ResponseField>
+
+### Example
+
+```typescript
+const hsv: HSV = { h: 217, s: 76, v: 96 };
+```
+
+---
+
+## Conversion Chains
+
+You can chain conversions to transform between any color formats:
+
+```typescript
+import { hexToRgb, rgbToHsl, hslToHex } from './colorUtils';
+
+// Hex → RGB → HSL → Hex
+const original = '#3b82f6';
+const rgb = hexToRgb(original);
+const hsl = rgbToHsl(rgb);
+const backToHex = hslToHex(hsl);
+
+console.log(original === backToHex); // true
+```
+
+### Common Patterns
+
+```typescript
+// Adjust lightness of a hex color
+const hex = '#3b82f6';
+const hsl = hexToHsl(hex);
+hsl.l = 70; // Increase lightness
+const lighter = hslToHex(hsl);
+
+// Adjust saturation via HSV
+const rgb = hexToRgb('#3b82f6');
+const hsv = rgbToHsv(rgb);
+hsv.s = 50; // Reduce saturation
+const desaturated = rgbToHex(hsvToRgb(hsv));
+```

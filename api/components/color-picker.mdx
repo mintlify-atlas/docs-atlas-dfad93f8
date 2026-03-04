@@ -1,0 +1,260 @@
+---
+title: ColorPicker
+description: Color selection components for Theme Gen
+---
+
+Theme Gen provides two color picker components: `ColorPicker` for standalone color selection and `ColorPickerPopover` for the inline color picker used in the ThemeCustomizer.
+
+## ColorPicker
+
+A full-featured color picker with HSV gradient selector, hue bar, format conversion, and eyedropper support.
+
+### Props
+
+<ParamField path="color" type="string" required>
+  The current color value as a hex string (e.g., `"#3b82f6"`).
+</ParamField>
+
+<ParamField path="onChange" type="(color: string) => void" required>
+  Callback function called when the color changes. Receives the new hex color string.
+</ParamField>
+
+<ParamField path="format" type="ColorFormat" default="ColorFormat.OKLCH">
+  The color format to display in the input fields. Options:
+  - `ColorFormat.OKLCH` - OKLCH color space (lightness, chroma, hue)
+  - `ColorFormat.HEX` - Hexadecimal color code
+  - `ColorFormat.RGB` - RGB values (0-255)
+  - `ColorFormat.HSL` - HSL values (hue 0-360, saturation/lightness 0-100%)
+</ParamField>
+
+<ParamField path="variant" type="ColorPickerVariant" required>
+  The picker variant to render:
+  - `ColorPickerVariant.Free` - Shows format selector, allows switching between formats
+  - `ColorPickerVariant.Predefined` - Hides format selector, uses the provided format only
+</ParamField>
+
+### Usage
+
+```tsx
+import { ColorPicker, ColorPickerVariant, ColorFormat } from '@/components/ColorPicker';
+import { useState } from 'react';
+
+function MyComponent() {
+  const [color, setColor] = useState('#3b82f6');
+
+  return (
+    <ColorPicker
+      color={color}
+      onChange={setColor}
+      variant={ColorPickerVariant.Free}
+      format={ColorFormat.OKLCH}
+    />
+  );
+}
+```
+
+### Features
+
+#### Interactive Color Selection
+
+The picker provides two interactive controls:
+
+1. **Saturation/Value Square** - 2D gradient for selecting color saturation and brightness
+2. **Hue Bar** - Linear gradient for selecting color hue (0-360 degrees)
+
+Both controls support click and drag interactions.
+
+Source: `src/components/ColorPicker.tsx:77-127`
+
+#### Format Conversion
+
+When `variant` is `ColorPickerVariant.Free`, users can switch between four color formats:
+
+- **OKLCH** - Perceptually uniform color space with L (0-100%), C (0-0.4), H (0-360°)
+- **HEX** - Standard hexadecimal color code (#RRGGBB)
+- **RGB** - Red, Green, Blue values (0-255 each)
+- **HSL** - Hue (0-360), Saturation (0-100%), Lightness (0-100%)
+
+The picker internally uses HSV for all color manipulation and converts to the selected format for display.
+
+Source: `src/components/ColorPicker.tsx:250-426`
+
+#### Color Name Display
+
+The picker displays a human-readable color name (e.g., "Sky Blue", "Mystery color") using the `getColorName` utility.
+
+Source: `src/components/ColorPicker.tsx:428-430`
+
+#### Copy to Clipboard
+
+Click the copy button to copy the color value in the currently selected format to the clipboard. Shows a check icon for 1.2 seconds after copying.
+
+Source: `src/components/ColorPicker.tsx:135-153`
+
+#### EyeDropper API
+
+If the browser supports the [EyeDropper API](https://developer.mozilla.org/en-US/docs/Web/API/EyeDropper_API), the eyedropper button allows picking colors from anywhere on screen.
+
+The button is disabled if the API is not supported.
+
+Source: `src/components/ColorPicker.tsx:156-173`
+
+### Types and Enums
+
+```tsx
+enum ColorPickerVariant {
+  Predefined = "predefined",
+  Free = "free",
+}
+
+enum ColorFormat {
+  OKLCH = "oklch",
+  HEX = "hex",
+  RGB = "rgb",
+  HSL = "hsl",
+}
+
+interface ColorPickerProps {
+  color: string;
+  onChange(color: string): void;
+  format?: ColorFormat;
+  variant: ColorPickerVariant;
+}
+```
+
+Source: `src/components/ColorPicker.tsx:15-32`
+
+## ColorPickerPopover
+
+A popover wrapper around `ColorPicker` that displays contrast information and positions itself relative to a color button.
+
+### Props
+
+<ParamField path="isOpen" type="boolean" required>
+  Controls visibility of the popover.
+</ParamField>
+
+<ParamField path="selectedColor" type="string | null" required>
+  The currently selected color as a hex string, or `null` if no color is selected.
+</ParamField>
+
+<ParamField path="selectedProperty" type="string | null" required>
+  The theme property name being edited (e.g., `"primary"`, `"background"`), or `null`.
+</ParamField>
+
+<ParamField path="colorButtons" type="ColorButtonData[]" required>
+  Array of color button configuration objects. Used to find the target contrast ratio for the selected property.
+
+  ```tsx
+  interface ColorButtonData {
+    color: string;
+    label: string;
+    property: string;
+    fg: 'text' | 'primary' | 'accent';
+    bg: 'background' | 'container';
+    target: number;
+    onColor?: string;
+  }
+  ```
+</ParamField>
+
+<ParamField path="ratioByProperty" type="Record<string, number>" required>
+  Map of property names to their current contrast ratios.
+
+  Example:
+  ```tsx
+  {
+    "text": 12.3,
+    "primary": 4.5,
+    "accent": 3.2
+  }
+  ```
+</ParamField>
+
+<ParamField path="popoverLeft" type="number" required>
+  Horizontal position in pixels for the popover, relative to its container.
+</ParamField>
+
+<ParamField path="onColorChange" type="(color: string) => void" required>
+  Callback function called when the color changes in the picker.
+</ParamField>
+
+### Usage
+
+```tsx
+import { ColorPickerPopover } from '@/components/ColorPickerPopover';
+import { forwardRef } from 'react';
+
+const ref = useRef<HTMLDivElement>(null);
+
+<ColorPickerPopover
+  ref={ref}
+  isOpen={true}
+  selectedColor="#3b82f6"
+  selectedProperty="primary"
+  colorButtons={colorButtons}
+  ratioByProperty={{ primary: 4.5, text: 12.3 }}
+  popoverLeft={120}
+  onColorChange={(color) => console.log('New color:', color)}
+/>
+```
+
+### Features
+
+#### Contrast Check Panel
+
+The popover displays contrast information at the top:
+
+- Current contrast ratio (e.g., "4.5:1")
+- Pass/Fail indicator based on the target ratio
+- Target ratio requirement
+- Foreground vs Background label (e.g., "primary vs background")
+
+Source: `src/components/ColorPickerPopover.tsx:48-66`
+
+#### Positioning
+
+The popover positions itself above the selected color button using:
+
+```tsx
+style={{
+  bottom: "100%",
+  left: popoverLeft,
+}}
+```
+
+A small arrow indicator points down toward the button.
+
+Source: `src/components/ColorPickerPopover.tsx:38-47`
+
+#### Auto-hide
+
+The popover returns `null` when:
+- `isOpen` is `false`
+- `selectedColor` is `null`
+- `selectedProperty` is `null`
+- No matching button is found in `colorButtons`
+
+Source: `src/components/ColorPickerPopover.tsx:29-32`
+
+### Ref Forwarding
+
+The component uses `forwardRef` to expose its root DOM element, allowing parent components to measure and position it.
+
+Source: `src/components/ColorPickerPopover.tsx:16-28`
+
+### Interface
+
+```tsx
+interface ColorPickerPopoverProps {
+  isOpen: boolean;
+  selectedColor: string | null;
+  selectedProperty: string | null;
+  colorButtons: ColorButtonData[];
+  ratioByProperty: Record<string, number>;
+  popoverLeft: number;
+  onColorChange: (color: string) => void;
+}
+```
+
+Source: `src/components/ColorPickerPopover.tsx:6-14`

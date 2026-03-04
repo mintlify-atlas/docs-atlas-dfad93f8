@@ -1,0 +1,771 @@
+---
+title: TypeScript Types
+description: Complete TypeScript type definitions and interfaces used throughout Theme Gen
+---
+
+This page documents all TypeScript types and interfaces exported by Theme Gen. Types are organized into categories for easy reference.
+
+## Theme Types
+
+### Theme
+
+The core theme type that defines the structure of a complete theme.
+
+```typescript
+type Theme = {
+  name: string;
+  colors: {
+    // Core colors
+    text: string;
+    background: string;
+    primary: string;
+    container: string;
+    accent: string;
+
+    // State colors
+    success: string;
+    error: string;
+    warning: string;
+
+    // On-surface colors (auto-derived)
+    onPrimary: string;
+    onContainer: string;
+    onAccent: string;
+    onSuccess: string;
+    onError: string;
+    onWarning: string;
+
+    // Utility colors (auto-derived)
+    border: string;
+    muted: string;
+    ring: string;
+  };
+};
+```
+
+<ResponseField name="name" type="string" required>
+  Display name of the theme (e.g., "Light", "Dark")
+</ResponseField>
+
+<ResponseField name="colors" type="object" required>
+  Collection of all color values in the theme
+  
+  <Expandable title="Core Colors">
+    <ResponseField name="text" type="string" required>
+      Primary text color
+    </ResponseField>
+    
+    <ResponseField name="background" type="string" required>
+      Primary background color
+    </ResponseField>
+    
+    <ResponseField name="primary" type="string" required>
+      Primary brand color for buttons and key actions
+    </ResponseField>
+    
+    <ResponseField name="container" type="string" required>
+      Container background color (cards, panels)
+    </ResponseField>
+    
+    <ResponseField name="accent" type="string" required>
+      Accent color for highlights and secondary actions
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="State Colors">
+    <ResponseField name="success" type="string" required>
+      Success state color (green)
+    </ResponseField>
+    
+    <ResponseField name="error" type="string" required>
+      Error state color (red)
+    </ResponseField>
+    
+    <ResponseField name="warning" type="string" required>
+      Warning state color (yellow/orange)
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="On-Surface Colors">
+    <ResponseField name="onPrimary" type="string" required>
+      Text color to use on primary background
+    </ResponseField>
+    
+    <ResponseField name="onContainer" type="string" required>
+      Text color to use on container background
+    </ResponseField>
+    
+    <ResponseField name="onAccent" type="string" required>
+      Text color to use on accent background
+    </ResponseField>
+    
+    <ResponseField name="onSuccess" type="string" required>
+      Text color to use on success background
+    </ResponseField>
+    
+    <ResponseField name="onError" type="string" required>
+      Text color to use on error background
+    </ResponseField>
+    
+    <ResponseField name="onWarning" type="string" required>
+      Text color to use on warning background
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="Utility Colors">
+    <ResponseField name="border" type="string" required>
+      Border color derived from text and background
+    </ResponseField>
+    
+    <ResponseField name="muted" type="string" required>
+      Muted text color for secondary content
+    </ResponseField>
+    
+    <ResponseField name="ring" type="string" required>
+      Focus ring color (typically matches primary)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### SavedTheme
+
+Represents a user-saved theme with metadata.
+
+```typescript
+interface SavedTheme {
+  id: string;
+  name: string;
+  theme: Theme;
+  themeName: string;
+  savedAt: string;
+}
+```
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the saved theme (e.g., "saved-1234567890")
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  User-provided name for the saved theme
+</ResponseField>
+
+<ResponseField name="theme" type="Theme" required>
+  The complete theme object
+</ResponseField>
+
+<ResponseField name="themeName" type="string" required>
+  Base theme name ("light" or "dark")
+</ResponseField>
+
+<ResponseField name="savedAt" type="string" required>
+  ISO 8601 timestamp when the theme was saved
+</ResponseField>
+
+### ThemeContextType
+
+The type definition for the Theme Context API.
+
+```typescript
+type ThemeContextType = {
+  theme: Theme;
+  themeName: string;
+  setTheme: (themeName: string, customColors?: Partial<Theme["colors"]>) => void;
+  updateThemeProperty: (path: string[], value: string) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  pushHistory: () => void;
+  savedThemes: SavedTheme[];
+  saveCurrentTheme: (name: string) => void;
+  deleteSavedTheme: (id: string) => void;
+  loadSavedTheme: (saved: SavedTheme) => void;
+};
+```
+
+<ResponseField name="theme" type="Theme" required>
+  Current active theme
+</ResponseField>
+
+<ResponseField name="themeName" type="string" required>
+  Current theme name ("light" or "dark")
+</ResponseField>
+
+<ResponseField name="setTheme" type="function" required>
+  Set the theme by name with optional custom colors
+  
+  **Parameters:**
+  - `themeName` (string): Theme to activate
+  - `customColors` (Partial&lt;Theme["colors"]&gt;): Optional color overrides
+</ResponseField>
+
+<ResponseField name="updateThemeProperty" type="function" required>
+  Update a specific theme property by path
+  
+  **Parameters:**
+  - `path` (string[]): Property path (e.g., ["colors", "primary"])
+  - `value` (string): New value to set
+</ResponseField>
+
+<ResponseField name="undo" type="function" required>
+  Undo the last theme change
+</ResponseField>
+
+<ResponseField name="redo" type="function" required>
+  Redo the last undone change
+</ResponseField>
+
+<ResponseField name="canUndo" type="boolean" required>
+  Whether undo is available
+</ResponseField>
+
+<ResponseField name="canRedo" type="boolean" required>
+  Whether redo is available
+</ResponseField>
+
+<ResponseField name="pushHistory" type="function" required>
+  Manually push current state to history
+</ResponseField>
+
+<ResponseField name="savedThemes" type="SavedTheme[]" required>
+  Array of user-saved themes
+</ResponseField>
+
+<ResponseField name="saveCurrentTheme" type="function" required>
+  Save the current theme
+  
+  **Parameters:**
+  - `name` (string): Name for the saved theme
+</ResponseField>
+
+<ResponseField name="deleteSavedTheme" type="function" required>
+  Delete a saved theme by ID
+  
+  **Parameters:**
+  - `id` (string): ID of theme to delete
+</ResponseField>
+
+<ResponseField name="loadSavedTheme" type="function" required>
+  Load a saved theme
+  
+  **Parameters:**
+  - `saved` (SavedTheme): Theme to load
+</ResponseField>
+
+## Color Types
+
+### RGB
+
+Red, Green, Blue color representation.
+
+```typescript
+interface RGB {
+  r: number;
+  g: number;
+  b: number;
+}
+```
+
+<ResponseField name="r" type="number" required>
+  Red channel (0-255)
+</ResponseField>
+
+<ResponseField name="g" type="number" required>
+  Green channel (0-255)
+</ResponseField>
+
+<ResponseField name="b" type="number" required>
+  Blue channel (0-255)
+</ResponseField>
+
+### HSL
+
+Hue, Saturation, Lightness color representation.
+
+```typescript
+interface HSL {
+  h: number;
+  s: number;
+  l: number;
+}
+```
+
+<ResponseField name="h" type="number" required>
+  Hue (0-360 degrees)
+</ResponseField>
+
+<ResponseField name="s" type="number" required>
+  Saturation (0-100%)
+</ResponseField>
+
+<ResponseField name="l" type="number" required>
+  Lightness (0-100%)
+</ResponseField>
+
+### HSV
+
+Hue, Saturation, Value color representation.
+
+```typescript
+interface HSV {
+  h: number; // 0-360
+  s: number; // 0-100
+  v: number; // 0-100
+}
+```
+
+<ResponseField name="h" type="number" required>
+  Hue (0-360 degrees)
+</ResponseField>
+
+<ResponseField name="s" type="number" required>
+  Saturation (0-100%)
+</ResponseField>
+
+<ResponseField name="v" type="number" required>
+  Value/Brightness (0-100%)
+</ResponseField>
+
+### WCAGContrastResult
+
+WCAG contrast ratio analysis result.
+
+```typescript
+interface WCAGContrastResult {
+  ratio: number;
+  aaNormal: boolean;
+  aaLarge: boolean;
+  aaaNormal: boolean;
+  aaaLarge: boolean;
+}
+```
+
+<ResponseField name="ratio" type="number" required>
+  Calculated contrast ratio (e.g., 4.5)
+</ResponseField>
+
+<ResponseField name="aaNormal" type="boolean" required>
+  Passes WCAG AA for normal text (4.5:1)
+</ResponseField>
+
+<ResponseField name="aaLarge" type="boolean" required>
+  Passes WCAG AA for large text (3:1)
+</ResponseField>
+
+<ResponseField name="aaaNormal" type="boolean" required>
+  Passes WCAG AAA for normal text (7:1)
+</ResponseField>
+
+<ResponseField name="aaaLarge" type="boolean" required>
+  Passes WCAG AAA for large text (4.5:1)
+</ResponseField>
+
+### HarmonyMode
+
+Color harmony generation mode.
+
+```typescript
+type HarmonyMode = "complementary" | "monochromatic";
+```
+
+<ResponseField name="complementary" type="string">
+  Generate colors 180 degrees apart on the color wheel
+</ResponseField>
+
+<ResponseField name="monochromatic" type="string">
+  Generate colors using the same hue with different lightness
+</ResponseField>
+
+## Component Types
+
+### ColorPickerVariant
+
+Defines the variant of the color picker component.
+
+```typescript
+enum ColorPickerVariant {
+  Predefined = "predefined",
+  Free = "free",
+}
+```
+
+<ResponseField name="Predefined" type="string">
+  Limited to predefined color options
+</ResponseField>
+
+<ResponseField name="Free" type="string">
+  Full color picker with format selection
+</ResponseField>
+
+### ColorFormat
+
+Color format options for display and export.
+
+```typescript
+enum ColorFormat {
+  OKLCH = "oklch",
+  HEX = "hex",
+  RGB = "rgb",
+  HSL = "hsl",
+}
+```
+
+<ResponseField name="OKLCH" type="string">
+  OKLCH perceptually uniform color space
+</ResponseField>
+
+<ResponseField name="HEX" type="string">
+  Hexadecimal color format (#RRGGBB)
+</ResponseField>
+
+<ResponseField name="RGB" type="string">
+  RGB color format (rgb(r, g, b))
+</ResponseField>
+
+<ResponseField name="HSL" type="string">
+  HSL color format (hsl(h, s%, l%))
+</ResponseField>
+
+### ColorPickerProps
+
+Props for the ColorPicker component.
+
+```typescript
+interface ColorPickerProps {
+  color: string;
+  onChange(color: string): void;
+  format?: ColorFormat;
+  variant: ColorPickerVariant;
+}
+```
+
+<ResponseField name="color" type="string" required>
+  Current color value (hex format)
+</ResponseField>
+
+<ResponseField name="onChange" type="function" required>
+  Callback when color changes
+  
+  **Parameters:**
+  - `color` (string): New color value
+</ResponseField>
+
+<ResponseField name="format" type="ColorFormat">
+  Initial color format to display (default: OKLCH)
+</ResponseField>
+
+<ResponseField name="variant" type="ColorPickerVariant" required>
+  Picker variant (predefined or free)
+</ResponseField>
+
+### ColorPickerPopoverProps
+
+Props for the ColorPickerPopover component.
+
+```typescript
+interface ColorPickerPopoverProps {
+  isOpen: boolean;
+  selectedColor: string | null;
+  selectedProperty: string | null;
+  colorButtons: ColorButtonData[];
+  ratioByProperty: Record<string, number>;
+  popoverLeft: number;
+  onColorChange: (color: string) => void;
+}
+```
+
+<ResponseField name="isOpen" type="boolean" required>
+  Whether the popover is visible
+</ResponseField>
+
+<ResponseField name="selectedColor" type="string | null" required>
+  Currently selected color
+</ResponseField>
+
+<ResponseField name="selectedProperty" type="string | null" required>
+  Currently selected color property name
+</ResponseField>
+
+<ResponseField name="colorButtons" type="ColorButtonData[]" required>
+  Array of color button configurations
+</ResponseField>
+
+<ResponseField name="ratioByProperty" type="Record<string, number>" required>
+  Contrast ratios keyed by property name
+</ResponseField>
+
+<ResponseField name="popoverLeft" type="number" required>
+  Left position for the popover (in pixels)
+</ResponseField>
+
+<ResponseField name="onColorChange" type="function" required>
+  Callback when color changes
+  
+  **Parameters:**
+  - `color` (string): New color value
+</ResponseField>
+
+### ColorButtonData
+
+Configuration for a color button in the theme customizer.
+
+```typescript
+interface ColorButtonData {
+  color: string;
+  label: string;
+  property: string;
+  fg: 'text' | 'primary' | 'accent';
+  bg: 'background' | 'container';
+  target: number;
+  onColor?: string;
+}
+```
+
+<ResponseField name="color" type="string" required>
+  Current color value
+</ResponseField>
+
+<ResponseField name="label" type="string" required>
+  Display label for the button
+</ResponseField>
+
+<ResponseField name="property" type="string" required>
+  Theme property name this button controls
+</ResponseField>
+
+<ResponseField name="fg" type="'text' | 'primary' | 'accent'" required>
+  Foreground color property for contrast check
+</ResponseField>
+
+<ResponseField name="bg" type="'background' | 'container'" required>
+  Background color property for contrast check
+</ResponseField>
+
+<ResponseField name="target" type="number" required>
+  Target contrast ratio (e.g., 4.5, 7)
+</ResponseField>
+
+<ResponseField name="onColor" type="string">
+  Optional text color to display on the button
+</ResponseField>
+
+### ColorButtonProps
+
+Props for the ColorButton component.
+
+```typescript
+interface ColorButtonProps {
+  color: string;
+  label: string;
+  property: string;
+  onClick: (color: string, property: string, button: HTMLButtonElement) => void;
+  isLocked: boolean;
+  onLockToggle: (property: string) => void;
+  ratio: number;
+  target: number;
+  isDarkTheme: boolean;
+  isCompact: boolean;
+  onColor?: string;
+}
+```
+
+<ResponseField name="color" type="string" required>
+  Current color value
+</ResponseField>
+
+<ResponseField name="label" type="string" required>
+  Display label
+</ResponseField>
+
+<ResponseField name="property" type="string" required>
+  Theme property name
+</ResponseField>
+
+<ResponseField name="onClick" type="function" required>
+  Click handler
+  
+  **Parameters:**
+  - `color` (string): Current color
+  - `property` (string): Property name
+  - `button` (HTMLButtonElement): Button element reference
+</ResponseField>
+
+<ResponseField name="isLocked" type="boolean" required>
+  Whether this color is locked from changes
+</ResponseField>
+
+<ResponseField name="onLockToggle" type="function" required>
+  Lock toggle handler
+  
+  **Parameters:**
+  - `property` (string): Property name to toggle
+</ResponseField>
+
+<ResponseField name="ratio" type="number" required>
+  Current contrast ratio
+</ResponseField>
+
+<ResponseField name="target" type="number" required>
+  Target contrast ratio
+</ResponseField>
+
+<ResponseField name="isDarkTheme" type="boolean" required>
+  Whether dark theme is active
+</ResponseField>
+
+<ResponseField name="isCompact" type="boolean" required>
+  Whether to use compact layout
+</ResponseField>
+
+<ResponseField name="onColor" type="string">
+  Optional text color override
+</ResponseField>
+
+## State Management Types
+
+### ColorPickerState
+
+State for the color picker popover.
+
+```typescript
+interface ColorPickerState {
+  isOpen: boolean;
+  selectedColor: string | null;
+  selectedProperty: string | null;
+  activeButton: HTMLButtonElement | null;
+  popoverLeft: number;
+}
+```
+
+<ResponseField name="isOpen" type="boolean" required>
+  Whether picker is open
+</ResponseField>
+
+<ResponseField name="selectedColor" type="string | null" required>
+  Currently selected color
+</ResponseField>
+
+<ResponseField name="selectedProperty" type="string | null" required>
+  Currently selected property
+</ResponseField>
+
+<ResponseField name="activeButton" type="HTMLButtonElement | null" required>
+  Reference to the active button element
+</ResponseField>
+
+<ResponseField name="popoverLeft" type="number" required>
+  Popover left position
+</ResponseField>
+
+### ColorPickerAction
+
+Actions for color picker state reducer.
+
+```typescript
+type ColorPickerAction =
+  | { type: 'OPEN_COLOR_PICKER'; payload: { color: string; property: string; button: HTMLButtonElement } }
+  | { type: 'CLOSE_COLOR_PICKER' }
+  | { type: 'SET_COLOR'; payload: string }
+  | { type: 'SET_POPOVER_POSITION'; payload: number };
+```
+
+### ExportModalState
+
+State for the export modal.
+
+```typescript
+interface ExportModalState {
+  showExportModal: boolean;
+  exportFormat: 'css' | 'tailwind' | 'scss' | 'swiftui' | 'reactnative';
+  tailwindVersion: '3' | '4';
+  exportMode: 'light' | 'dark' | 'both';
+  colorFormat: 'hex' | 'rgb' | 'hsl' | 'oklch';
+  copied: boolean;
+  isModalClosing: boolean;
+  isModalEntering: boolean;
+}
+```
+
+<ResponseField name="showExportModal" type="boolean" required>
+  Whether modal is visible
+</ResponseField>
+
+<ResponseField name="exportFormat" type="'css' | 'tailwind' | 'scss' | 'swiftui' | 'reactnative'" required>
+  Selected export format
+</ResponseField>
+
+<ResponseField name="tailwindVersion" type="'3' | '4'" required>
+  Tailwind CSS version for export
+</ResponseField>
+
+<ResponseField name="exportMode" type="'light' | 'dark' | 'both'" required>
+  Which theme mode(s) to export
+</ResponseField>
+
+<ResponseField name="colorFormat" type="'hex' | 'rgb' | 'hsl' | 'oklch'" required>
+  Color format for export
+</ResponseField>
+
+<ResponseField name="copied" type="boolean" required>
+  Whether code was copied to clipboard
+</ResponseField>
+
+<ResponseField name="isModalClosing" type="boolean" required>
+  Whether modal is in closing animation
+</ResponseField>
+
+<ResponseField name="isModalEntering" type="boolean" required>
+  Whether modal is in entering animation
+</ResponseField>
+
+### ExportModalAction
+
+Actions for export modal state reducer.
+
+```typescript
+type ExportModalAction =
+  | { type: 'OPEN_EXPORT_MODAL' }
+  | { type: 'CLOSE_EXPORT_MODAL' }
+  | { type: 'START_MODAL_CLOSING' }
+  | { type: 'SET_MODAL_ENTERING'; payload: boolean }
+  | { type: 'SET_EXPORT_FORMAT'; payload: 'css' | 'tailwind' | 'scss' | 'swiftui' | 'reactnative' }
+  | { type: 'SET_TAILWIND_VERSION'; payload: '3' | '4' }
+  | { type: 'SET_EXPORT_MODE'; payload: 'light' | 'dark' | 'both' }
+  | { type: 'SET_COLOR_FORMAT'; payload: 'hex' | 'rgb' | 'hsl' | 'oklch' }
+  | { type: 'SET_COPIED'; payload: boolean };
+```
+
+## Export Types
+
+### ExportModalProps
+
+Props for the ExportModal component.
+
+```typescript
+interface ExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+```
+
+<ResponseField name="isOpen" type="boolean" required>
+  Whether the modal is open
+</ResponseField>
+
+<ResponseField name="onClose" type="function" required>
+  Callback to close the modal
+</ResponseField>
+
+## Related Documentation
+
+<Card title="Color Utilities" icon="palette" href="/api/color-utils">
+  Functions for color manipulation and conversion
+</Card>
+
+<Card title="Theme Context" icon="brush" href="/api/theme-context">
+  React context for theme management
+</Card>
+
+<Card title="Components" icon="square" href="/api/components/theme-customizer">
+  UI component API reference
+</Card>

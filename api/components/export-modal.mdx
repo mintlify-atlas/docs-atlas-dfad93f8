@@ -1,0 +1,342 @@
+---
+title: ExportModal
+description: Export theme configurations to multiple formats and platforms
+---
+
+The `ExportModal` component provides a comprehensive theme export interface, allowing users to export their theme configurations to various formats and platforms including CSS, Tailwind CSS, SCSS, SwiftUI, and React Native.
+
+## Props
+
+<ParamField path="isOpen" type="boolean" required>
+  Controls the visibility of the export modal.
+</ParamField>
+
+<ParamField path="onClose" type="() => void" required>
+  Callback function called when the modal should close. Called after the closing animation completes (200ms delay).
+</ParamField>
+
+## Usage
+
+```tsx
+import { ExportModal } from '@/components/ExportModal';
+import { useState } from 'react';
+
+function MyComponent() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>
+        Export Theme
+      </button>
+      <ExportModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+      />
+    </>
+  );
+}
+```
+
+## Features
+
+### Export Formats
+
+The modal supports 5 export formats:
+
+#### CSS
+
+Generates CSS custom properties (variables) for the theme colors.
+
+**Light mode only:**
+```css
+:root {
+  --color-text: #1a1a1a;
+  --color-background: #ffffff;
+  --color-primary: #3b82f6;
+  /* ... */
+}
+```
+
+**Both modes:**
+```css
+:root {
+  /* light colors */
+}
+
+.dark {
+  /* dark colors */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* dark colors */
+  }
+}
+```
+
+Source: `src/components/ExportModal.tsx:113-122`
+
+#### Tailwind CSS
+
+Generates Tailwind configuration in two versions:
+
+**Tailwind v4.2** (default) - Uses `@theme` directive:
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-text: #1a1a1a;
+  --color-background: #ffffff;
+  /* ... */
+}
+
+@variant dark {
+  @theme {
+    /* dark colors */
+  }
+}
+```
+
+**Tailwind v3.4** - Uses JavaScript config:
+```js
+module.exports = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        text: '#1a1a1a',
+        background: '#ffffff',
+        /* ... */
+      }
+    }
+  }
+}
+```
+
+Source: `src/components/ExportModal.tsx:124-141`
+
+#### SCSS
+
+Generates SCSS variables and color maps:
+
+```scss
+// Light theme
+$light-text: #1a1a1a;
+$light-background: #ffffff;
+
+$light-colors: (
+  "text": #1a1a1a,
+  "background": #ffffff,
+);
+
+// Dark theme
+$dark-text: #f5f5f5;
+$dark-background: #0a0a0a;
+
+$dark-colors: (
+  "text": #f5f5f5,
+  "background": #0a0a0a,
+);
+```
+
+Source: `src/components/ExportModal.tsx:143-151`
+
+#### SwiftUI
+
+Generates SwiftUI color definitions:
+
+**Single mode:**
+```swift
+import SwiftUI
+
+struct Theme {
+    static let text = Color(hex: "#1a1a1a")
+    static let background = Color(hex: "#ffffff")
+    static let primary = Color(hex: "#3b82f6")
+    // ...
+}
+
+// Color hex initializer
+extension Color {
+    init(hex: String) {
+        // ... implementation
+    }
+}
+```
+
+**Both modes:**
+```swift
+import SwiftUI
+
+struct AppColors {
+    let text: Color
+    let background: Color
+    // ...
+}
+
+extension AppColors {
+    static let light = AppColors(
+        text: Color(hex: "#1a1a1a"),
+        background: Color(hex: "#ffffff"),
+        // ...
+    )
+
+    static let dark = AppColors(
+        text: Color(hex: "#f5f5f5"),
+        background: Color(hex: "#0a0a0a"),
+        // ...
+    )
+}
+```
+
+Source: `src/components/ExportModal.tsx:153-188`
+
+#### React Native
+
+Generates TypeScript color constants:
+
+```typescript
+// theme.ts
+export const lightColors = {
+  text: '#1a1a1a',
+  background: '#ffffff',
+  primary: '#3b82f6',
+} as const;
+
+export const darkColors = {
+  text: '#f5f5f5',
+  background: '#0a0a0a',
+  primary: '#3b82f6',
+} as const;
+
+export type ColorName = keyof typeof lightColors;
+
+// Usage:
+// import { useColorScheme } from 'react-native';
+// const colors = useColorScheme() === 'dark' ? darkColors : lightColors;
+```
+
+**Note:** OKLCH format is automatically converted to RGB for React Native since it lacks native OKLCH support.
+
+Source: `src/components/ExportModal.tsx:190-207`
+
+### Export Modes
+
+Choose which theme mode(s) to export:
+
+- **Light** - Export only light theme colors
+- **Dark** - Export only dark theme colors  
+- **Both** - Export both themes with appropriate syntax for the selected format
+
+The modal retrieves colors from the current theme context for the active mode, and from localStorage or default themes for the inactive mode.
+
+Source: `src/components/ExportModal.tsx:73-78`
+
+### Color Formats
+
+Select the color format to use in the exported code:
+
+- **HEX** - Hexadecimal color codes (e.g., `#3b82f6`)
+- **RGB** - RGB function notation (e.g., `rgb(59, 130, 246)`)
+- **HSL** - HSL function notation (e.g., `hsl(217, 91%, 60%)`)
+- **OKLCH** - OKLCH function notation (e.g., `oklch(61.5% 0.182 245.7)`)
+
+All formats work with all export types, though OKLCH is converted to RGB for React Native.
+
+Source: `src/components/ExportModal.tsx:51-71`
+
+### Copy to Clipboard
+
+Click the copy button in the top-right of the code preview to copy the generated code. The button shows a check icon for 2 seconds after copying.
+
+Source: `src/components/ExportModal.tsx:214-222`
+
+### Tailwind Version Selection
+
+When Tailwind CSS is selected as the export format, a version selector appears to choose between:
+
+- **v4.2** - Modern `@theme` directive syntax
+- **v3.4** - Traditional JavaScript config syntax
+
+Source: `src/components/ExportModal.tsx:296-312`
+
+## Modal Behavior
+
+### Opening Animation
+
+The modal uses a two-phase animation:
+
+1. Modal overlay and content are rendered with opacity 0
+2. After 10ms, opacity transitions to 1 over 300ms (ease-out)
+
+Source: `src/components/ExportModal.tsx:34-42`
+
+### Closing Animation
+
+When closing:
+
+1. `isModalClosing` state is set to `true`
+2. Opacity transitions to 0 over 200ms (ease-in)
+3. After 200ms, `onClose` callback is called
+4. Parent component should set `isOpen={false}` in the callback
+
+Source: `src/components/ExportModal.tsx:44-49`
+
+### Click Outside to Close
+
+Click the backdrop or the X button to close the modal. Both trigger the closing animation.
+
+## State Management
+
+The component uses a reducer to manage internal state:
+
+```tsx
+interface ExportModalState {
+  showExportModal: boolean;
+  exportFormat: 'css' | 'tailwind' | 'scss' | 'swiftui' | 'reactnative';
+  tailwindVersion: '3' | '4';
+  exportMode: 'light' | 'dark' | 'both';
+  colorFormat: 'hex' | 'rgb' | 'hsl' | 'oklch';
+  copied: boolean;
+  isModalClosing: boolean;
+  isModalEntering: boolean;
+}
+```
+
+Source: `src/components/theme-customizer-types.ts:17-26`
+
+Actions include:
+
+- `OPEN_EXPORT_MODAL` / `CLOSE_EXPORT_MODAL`
+- `START_MODAL_CLOSING`
+- `SET_MODAL_ENTERING`
+- `SET_EXPORT_FORMAT`
+- `SET_TAILWIND_VERSION`
+- `SET_EXPORT_MODE`
+- `SET_COLOR_FORMAT`
+- `SET_COPIED`
+
+Source: `src/components/theme-customizer-types.ts:28-37`
+
+## Accessibility
+
+The modal implements proper ARIA attributes:
+
+- `role="dialog"` on the container
+- `aria-modal="true"` to indicate modal behavior
+- `aria-labelledby="modal-title"` pointing to the title element
+- `aria-hidden="true"` on the backdrop
+
+Source: `src/components/ExportModal.tsx:227-232`
+
+## Interface
+
+```tsx
+interface ExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+```
+
+Source: `src/components/ExportModal.tsx:12-15`

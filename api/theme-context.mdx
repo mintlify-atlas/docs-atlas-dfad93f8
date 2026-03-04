@@ -1,0 +1,504 @@
+---
+title: "Theme Context API"
+description: "Complete API reference for ThemeProvider and useTheme hook"
+---
+
+## Overview
+
+The Theme Context API provides a React Context-based solution for managing theme state, including light/dark mode switching, color customization, undo/redo functionality, and theme persistence. It handles URL synchronization, localStorage persistence, and CSS variable updates automatically.
+
+## ThemeProvider
+
+The `ThemeProvider` component wraps your application and provides theme context to all child components.
+
+### Props
+
+<ParamField path="children" type="React.ReactNode" required>
+  The child components that will have access to the theme context
+</ParamField>
+
+### Features
+
+- **URL Synchronization**: Automatically syncs theme colors to URL query parameters
+- **localStorage Persistence**: Saves theme preferences and custom themes
+- **CSS Variable Updates**: Automatically updates CSS custom properties on theme changes
+- **History Management**: Built-in undo/redo with 15-level history stack
+- **Keyboard Shortcuts**: Supports Cmd/Ctrl+Z for undo, Cmd/Ctrl+Shift+Z and Cmd/Ctrl+Y for redo
+- **Saved Themes**: Manage multiple saved theme configurations
+
+### Usage
+
+```tsx
+import { ThemeProvider } from "@/context/ThemeContext";
+
+function App() {
+  return (
+    <ThemeProvider>
+      <YourApp />
+    </ThemeProvider>
+  );
+}
+```
+
+## useTheme
+
+The `useTheme` hook provides access to the theme context. Must be used within a `ThemeProvider`.
+
+### Returns
+
+<ResponseField name="theme" type="Theme">
+  The current theme object containing name and colors
+
+  ```typescript
+  {
+    name: string;
+    colors: {
+      // Core colors
+      text: string;
+      background: string;
+      primary: string;
+      container: string;
+      accent: string;
+      
+      // State colors
+      success: string;
+      error: string;
+      warning: string;
+      
+      // On-surface colors (auto-derived)
+      onPrimary: string;
+      onContainer: string;
+      onAccent: string;
+      onSuccess: string;
+      onError: string;
+      onWarning: string;
+      
+      // Utility colors (auto-derived)
+      border: string;
+      muted: string;
+      ring: string;
+    };
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="themeName" type="string">
+  The current theme mode name (e.g., "light" or "dark")
+</ResponseField>
+
+<ResponseField name="setTheme" type="(themeName: string, customColors?: Partial<Theme['colors']>) => void">
+  Sets the theme by name with optional color overrides. Automatically pushes to history.
+</ResponseField>
+
+<ResponseField name="updateThemeProperty" type="(path: string[], value: string) => void">
+  Updates a specific theme property using a path array. Does not automatically push to history.
+</ResponseField>
+
+<ResponseField name="undo" type="() => void">
+  Reverts to the previous theme state in history
+</ResponseField>
+
+<ResponseField name="redo" type="() => void">
+  Reapplies the next theme state in the future stack
+</ResponseField>
+
+<ResponseField name="canUndo" type="boolean">
+  Whether undo operation is available (history stack has entries)
+</ResponseField>
+
+<ResponseField name="canRedo" type="boolean">
+  Whether redo operation is available (future stack has entries)
+</ResponseField>
+
+<ResponseField name="pushHistory" type="() => void">
+  Manually pushes the current theme state to history. Call before making changes you want to be undoable.
+</ResponseField>
+
+<ResponseField name="savedThemes" type="SavedTheme[]">
+  Array of user-saved theme configurations
+</ResponseField>
+
+<ResponseField name="saveCurrentTheme" type="(name: string) => void">
+  Saves the current theme with a custom name to localStorage
+</ResponseField>
+
+<ResponseField name="deleteSavedTheme" type="(id: string) => void">
+  Deletes a saved theme by its ID
+</ResponseField>
+
+<ResponseField name="loadSavedTheme" type="(saved: SavedTheme) => void">
+  Loads a previously saved theme. Automatically pushes current state to history.
+</ResponseField>
+
+### Usage
+
+```tsx
+import { useTheme } from "@/context/ThemeContext";
+
+function ThemeControls() {
+  const { 
+    theme, 
+    themeName, 
+    setTheme, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo 
+  } = useTheme();
+
+  return (
+    <div>
+      <p>Current mode: {themeName}</p>
+      <button onClick={() => setTheme("dark")}>Dark Mode</button>
+      <button onClick={() => setTheme("light")}>Light Mode</button>
+      <button onClick={undo} disabled={!canUndo}>Undo</button>
+      <button onClick={redo} disabled={!canRedo}>Redo</button>
+    </div>
+  );
+}
+```
+
+## Methods
+
+### setTheme
+
+Sets the theme by name with optional custom color overrides.
+
+<ParamField path="themeName" type="string" required>
+  The name of the theme to apply (e.g., "light" or "dark")
+</ParamField>
+
+<ParamField path="customColors" type="Partial<Theme['colors']>">
+  Optional color overrides to apply on top of the base theme
+</ParamField>
+
+**Example:**
+
+```tsx
+const { setTheme, pushHistory } = useTheme();
+
+// Switch to dark theme
+setTheme("dark");
+
+// Switch to light theme with custom primary color
+setTheme("light", { primary: "#FF5733" });
+```
+
+### updateThemeProperty
+
+Updates a specific theme property using a path array. Useful for granular color updates.
+
+<ParamField path="path" type="string[]" required>
+  Array representing the path to the property (e.g., `["colors", "primary"]`)
+</ParamField>
+
+<ParamField path="value" type="string" required>
+  The new value to set
+</ParamField>
+
+**Example:**
+
+```tsx
+const { updateThemeProperty, pushHistory } = useTheme();
+
+// Push current state to history before making changes
+pushHistory();
+
+// Update primary color
+updateThemeProperty(["colors", "primary"], "#4F46E5");
+
+// Update background color
+updateThemeProperty(["colors", "background"], "#1a1625");
+```
+
+### pushHistory
+
+Manually adds the current theme state to the undo history stack.
+
+**Example:**
+
+```tsx
+const { pushHistory, updateThemeProperty } = useTheme();
+
+// Push to history before making a batch of changes
+pushHistory();
+
+updateThemeProperty(["colors", "primary"], "#4F46E5");
+updateThemeProperty(["colors", "accent"], "#0284C7");
+```
+
+### saveCurrentTheme
+
+Saves the current theme configuration with a custom name.
+
+<ParamField path="name" type="string" required>
+  A display name for the saved theme
+</ParamField>
+
+**Example:**
+
+```tsx
+const { saveCurrentTheme } = useTheme();
+
+saveCurrentTheme("My Custom Theme");
+```
+
+### deleteSavedTheme
+
+Removes a saved theme from localStorage.
+
+<ParamField path="id" type="string" required>
+  The unique ID of the saved theme to delete
+</ParamField>
+
+**Example:**
+
+```tsx
+const { savedThemes, deleteSavedTheme } = useTheme();
+
+// Delete the first saved theme
+if (savedThemes.length > 0) {
+  deleteSavedTheme(savedThemes[0].id);
+}
+```
+
+### loadSavedTheme
+
+Loads a previously saved theme configuration.
+
+<ParamField path="saved" type="SavedTheme" required>
+  The saved theme object to load
+</ParamField>
+
+**Example:**
+
+```tsx
+const { savedThemes, loadSavedTheme } = useTheme();
+
+// Load the first saved theme
+if (savedThemes.length > 0) {
+  loadSavedTheme(savedThemes[0]);
+}
+```
+
+## Types
+
+### ThemeContextType
+
+The complete type definition for the context value returned by `useTheme()`.
+
+```typescript
+type ThemeContextType = {
+  theme: Theme;
+  themeName: string;
+  setTheme: (themeName: string, customColors?: Partial<Theme["colors"]>) => void;
+  updateThemeProperty: (path: string[], value: string) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  pushHistory: () => void;
+  savedThemes: SavedTheme[];
+  saveCurrentTheme: (name: string) => void;
+  deleteSavedTheme: (id: string) => void;
+  loadSavedTheme: (saved: SavedTheme) => void;
+};
+```
+
+### SavedTheme
+
+Interface for saved theme configurations.
+
+```typescript
+interface SavedTheme {
+  id: string;           // Unique identifier (e.g., "saved-1234567890")
+  name: string;         // User-provided display name
+  theme: Theme;         // The complete theme object
+  themeName: string;    // The base theme mode ("light" or "dark")
+  savedAt: string;      // ISO timestamp of when theme was saved
+}
+```
+
+### Theme
+
+The theme object structure. See [Theme Types](/api/theme-types) for complete documentation.
+
+## Complete Example
+
+Here's a comprehensive example showing common theme operations:
+
+```tsx
+import { useTheme } from "@/context/ThemeContext";
+
+function AdvancedThemeControls() {
+  const {
+    theme,
+    themeName,
+    setTheme,
+    updateThemeProperty,
+    pushHistory,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    savedThemes,
+    saveCurrentTheme,
+    deleteSavedTheme,
+    loadSavedTheme,
+  } = useTheme();
+
+  const handleColorChange = (color: string) => {
+    // Push to history before making changes
+    pushHistory();
+    updateThemeProperty(["colors", "primary"], color);
+  };
+
+  const handleSaveTheme = () => {
+    const name = prompt("Enter theme name:");
+    if (name) {
+      saveCurrentTheme(name);
+    }
+  };
+
+  return (
+    <div>
+      {/* Theme mode switcher */}
+      <div>
+        <button 
+          onClick={() => setTheme("light")}
+          disabled={themeName === "light"}
+        >
+          Light
+        </button>
+        <button 
+          onClick={() => setTheme("dark")}
+          disabled={themeName === "dark"}
+        >
+          Dark
+        </button>
+      </div>
+
+      {/* Color customization */}
+      <div>
+        <label>Primary Color:</label>
+        <input
+          type="color"
+          value={theme.colors.primary}
+          onChange={(e) => handleColorChange(e.target.value)}
+        />
+      </div>
+
+      {/* Undo/Redo controls */}
+      <div>
+        <button onClick={undo} disabled={!canUndo}>
+          Undo
+        </button>
+        <button onClick={redo} disabled={!canRedo}>
+          Redo
+        </button>
+      </div>
+
+      {/* Save current theme */}
+      <button onClick={handleSaveTheme}>
+        Save Current Theme
+      </button>
+
+      {/* Saved themes list */}
+      <div>
+        <h3>Saved Themes</h3>
+        {savedThemes.map((saved) => (
+          <div key={saved.id}>
+            <span>{saved.name}</span>
+            <button onClick={() => loadSavedTheme(saved)}>
+              Load
+            </button>
+            <button onClick={() => deleteSavedTheme(saved.id)}>
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### History Management
+
+Always call `pushHistory()` before making changes you want to be undoable:
+
+```tsx
+// ✅ Correct
+pushHistory();
+updateThemeProperty(["colors", "primary"], newColor);
+
+// ❌ Incorrect - change won't be undoable
+updateThemeProperty(["colors", "primary"], newColor);
+```
+
+Note that `setTheme()` automatically pushes to history, so you don't need to call it manually:
+
+```tsx
+// ✅ Correct - setTheme handles history automatically
+setTheme("dark");
+
+// ❌ Unnecessary
+pushHistory();
+setTheme("dark");
+```
+
+### Accessing Theme Colors
+
+Access the current theme colors through the `theme` object:
+
+```tsx
+const { theme } = useTheme();
+
+// Use in styles
+<div style={{ backgroundColor: theme.colors.background }}>
+  <h1 style={{ color: theme.colors.text }}>Hello</h1>
+</div>
+```
+
+### Error Handling
+
+The `useTheme` hook will throw an error if used outside of a `ThemeProvider`:
+
+```tsx
+// ✅ Correct
+function App() {
+  return (
+    <ThemeProvider>
+      <ComponentUsingTheme />
+    </ThemeProvider>
+  );
+}
+
+// ❌ Will throw error
+function App() {
+  const theme = useTheme(); // Error: useTheme must be used within a ThemeProvider
+  return <div>...</div>;
+}
+```
+
+## Implementation Details
+
+### URL Synchronization
+
+The ThemeProvider automatically syncs theme state to URL parameters:
+- `colors`: Compact color values (e.g., `1a1625-faf9fc-4F46E5-eeedf2-0284C7`)
+- `mode`: Current theme mode (`light` or `dark`)
+
+This allows themes to be shared via URL and persisted across page reloads.
+
+### localStorage Keys
+
+- `theme`: Current theme mode name
+- `customThemes`: Object mapping theme names to custom color configurations
+- `userSavedThemes`: Array of saved theme configurations
+
+### History Limits
+
+The undo/redo stack maintains a maximum of 15 history entries. Older entries are automatically removed when the limit is reached.

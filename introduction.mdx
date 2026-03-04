@@ -1,0 +1,210 @@
+---
+title: Welcome to Theme Gen
+description: Create accessible, shareable color palettes with real-time WCAG contrast auditing
+mode: custom
+---
+
+<div className="relative overflow-hidden dark:bg-[#0f1117] bg-white py-20">
+  <div className="max-w-6xl mx-auto px-6">
+    <div className="flex flex-col lg:flex-row items-center gap-12">
+      <div className="flex-1 text-center lg:text-left">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold dark:text-white text-gray-900 mb-6">
+          Create accessible color themes in seconds
+        </h1>
+        <p className="text-lg sm:text-xl dark:text-gray-400 text-gray-600 mb-8 max-w-2xl">
+          A visual theme generator that ensures your color palettes meet WCAG accessibility standards. Pick colors, check contrast ratios, and export production-ready theme code.
+        </p>
+        <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+          <a
+            href="/quickstart"
+            className="inline-flex items-center px-6 py-3 rounded-lg bg-[#4F46E5] text-white font-semibold hover:bg-[#4338CA] transition-colors"
+          >
+            Get Started
+          </a>
+          <a
+            href="/api/theme-context"
+            className="inline-flex items-center px-6 py-3 rounded-lg border dark:border-gray-700 border-gray-300 dark:bg-white/5 bg-gray-50 dark:text-white text-gray-900 font-semibold dark:hover:bg-white/10 hover:bg-gray-100 transition-colors"
+          >
+            View API Reference
+          </a>
+        </div>
+      </div>
+      <div className="flex-1 hidden lg:block">
+        <div className="dark:bg-[#1a1d27] bg-gray-50 rounded-2xl p-8 dark:border-[#27272a] border-gray-200 border">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="w-20 h-20 rounded-lg" style={{ backgroundColor: '#4F46E5' }}></div>
+              <div className="w-20 h-20 rounded-lg" style={{ backgroundColor: '#818CF8' }}></div>
+              <div className="w-20 h-20 rounded-lg" style={{ backgroundColor: '#0284C7' }}></div>
+            </div>
+            <div className="dark:bg-[#242838] bg-white rounded-lg p-4 dark:border-[#27272a] border-gray-200 border">
+              <div className="text-xs dark:text-gray-400 text-gray-600 mb-2">Contrast Ratio</div>
+              <div className="text-2xl font-bold dark:text-white text-gray-900">7.2:1</div>
+              <div className="text-xs dark:text-green-400 text-green-600 mt-1">✓ WCAG AAA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Quick Start
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Get up and running with Theme Gen in just a few steps
+  </p>
+
+  <Steps>
+    <Step title="Install dependencies">
+      Clone the repository and install dependencies with your preferred package manager.
+
+      <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+      ```bash yarn
+      yarn install
+      ```
+      ```bash pnpm
+      pnpm install
+      ```
+      </CodeGroup>
+    </Step>
+
+    <Step title="Start the development server">
+      Run the development server to start creating themes.
+
+      ```bash
+      npm run dev
+      ```
+
+      Open [http://localhost:3000](http://localhost:3000) in your browser.
+    </Step>
+
+    <Step title="Create your first theme">
+      Click on any color to open the color picker, or use the shuffle button to generate a random accessible palette. Lock colors you want to preserve during shuffles.
+
+      <Info>
+        All generated palettes automatically meet WCAG contrast requirements for text, backgrounds, and interactive elements.
+      </Info>
+    </Step>
+
+    <Step title="Export your theme">
+      Click the export button to generate theme code in multiple formats: CSS variables, Tailwind CSS (v3 & v4), or SCSS.
+
+      ```css CSS Variables
+      :root {
+        --color-text: #1a1625;
+        --color-background: #faf9fc;
+        --color-primary: #4F46E5;
+        --color-container: #eeedf2;
+        --color-accent: #0284C7;
+      }
+      ```
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Key Features
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Everything you need to create accessible, production-ready color themes
+  </p>
+
+  <CardGroup cols={2}>
+    <Card title="Live Preview" icon="eye" href="/features/live-preview">
+      Every color change updates the entire interface in real-time, so you can see exactly how your theme looks.
+    </Card>
+    <Card title="WCAG Auditing" icon="shield-check" href="/features/contrast-auditing">
+      Built-in checks for all required contrast ratios against WCAG AA and AAA standards.
+    </Card>
+    <Card title="Smart Shuffle" icon="shuffle" href="/features/smart-shuffle">
+      Generate random palettes that automatically pass all contrast requirements. Respects locked colors.
+    </Card>
+    <Card title="Color Locking" icon="lock" href="/features/color-locking">
+      Lock any color to preserve it during shuffles and regenerations.
+    </Card>
+    <Card title="Multi-Format Export" icon="download" href="/features/export">
+      Export to CSS variables, Tailwind CSS (v3 & v4), or SCSS in hex, rgb, or hsl formats.
+    </Card>
+    <Card title="URL Sharing" icon="link" href="/features/url-sharing">
+      Themes encode to URL parameters automatically. Share themes by copying the URL.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Explore by Topic
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Learn how to use Theme Gen effectively
+  </p>
+
+  <CardGroup cols={2}>
+    <Card title="Creating Themes" icon="palette" href="/guides/creating-themes">
+      Learn how to create and customize color themes from scratch.
+    </Card>
+    <Card title="Accessibility Guide" icon="universal-access" href="/guides/accessibility">
+      Understand WCAG contrast requirements and how Theme Gen ensures compliance.
+    </Card>
+    <Card title="Exporting Themes" icon="file-export" href="/guides/exporting">
+      Export your themes in multiple formats for different frameworks and build tools.
+    </Card>
+    <Card title="Sharing Themes" icon="share-nodes" href="/guides/sharing">
+      Share your themes with team members or save them for later use.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+    Developer Resources
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Integrate Theme Gen's functionality into your own projects
+  </p>
+
+  <CardGroup cols={3}>
+    <Card title="Theme Context" icon="layer-group" href="/api/theme-context">
+      React context provider and hooks for theme management.
+    </Card>
+    <Card title="Color Utilities" icon="droplet" href="/api/color-utils">
+      Functions for color generation, manipulation, and validation.
+    </Card>
+    <Card title="Contrast Functions" icon="chart-line" href="/api/contrast">
+      Calculate and validate WCAG contrast ratios.
+    </Card>
+    <Card title="Color Conversion" icon="rotate" href="/api/color-conversion">
+      Convert between hex, RGB, HSL, HSV, and OKLCH color spaces.
+    </Card>
+    <Card title="Components" icon="cube" href="/api/components/theme-customizer">
+      Pre-built React components for theme customization.
+    </Card>
+    <Card title="TypeScript Types" icon="code" href="/api/types">
+      Type definitions for themes, colors, and configurations.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="dark:bg-[#1a1d27] bg-gray-50 rounded-2xl p-8 sm:p-12 dark:border-[#27272a] border-gray-200 border text-center">
+    <h2 className="text-2xl sm:text-3xl font-bold dark:text-white text-gray-900 mb-4">
+      Ready to create accessible themes?
+    </h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 mb-8 max-w-2xl mx-auto">
+      Start building beautiful, accessible color palettes that meet WCAG standards out of the box.
+    </p>
+    <a
+      href="/quickstart"
+      className="inline-flex items-center px-6 py-3 rounded-lg bg-[#4F46E5] text-white font-semibold hover:bg-[#4338CA] transition-colors"
+    >
+      Get Started Now
+    </a>
+  </div>
+</div>

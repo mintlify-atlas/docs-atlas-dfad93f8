@@ -1,0 +1,314 @@
+---
+title: 'Color Utilities'
+description: 'Core color palette generation and manipulation functions'
+---
+
+## generateColorPalette
+
+Generates a complete, accessible color palette from a base color using the OKLCH color space.
+
+```typescript
+function generateColorPalette(
+  baseColor: string,
+  isDarkMode?: boolean,
+  lockedColors?: Record<string, string>,
+  harmonyMode?: HarmonyMode
+): Record<string, string>
+```
+
+<ParamField path="baseColor" type="string" required>
+  The base color in any valid CSS color format (hex, rgb, etc.)
+</ParamField>
+
+<ParamField path="isDarkMode" type="boolean" default="false">
+  Whether to generate a dark mode palette
+</ParamField>
+
+<ParamField path="lockedColors" type="Record<string, string>" default="{}">
+  Colors to preserve from modification (e.g., `{ primary: '#ff0000' }`)
+</ParamField>
+
+<ParamField path="harmonyMode" type="HarmonyMode" default="'complementary'">
+  Color harmony mode: `'complementary'` (180° hue offset) or `'monochromatic'` (same hue)
+</ParamField>
+
+<ResponseField name="return" type="Record<string, string>">
+  A complete palette object containing:
+  - `text` - Main text color (WCAG AAA contrast with background)
+  - `background` - Background color
+  - `primary` - Primary brand color
+  - `container` - Container/surface color
+  - `accent` - Accent color (complementary or monochromatic to primary)
+  - `success`, `error`, `warning` - Semantic state colors
+  - `onPrimary`, `onContainer`, `onAccent`, `onSuccess`, `onError`, `onWarning` - Contrasting colors for use on their respective backgrounds
+  - `border` - Border color (mixed from text and background)
+  - `muted` - Muted/subtle text color
+  - `ring` - Focus ring color (defaults to primary)
+</ResponseField>
+
+### Example
+
+```typescript
+import { generateColorPalette } from './colorUtils';
+
+const palette = generateColorPalette('#3b82f6', false, {}, 'complementary');
+
+console.log(palette);
+// {
+//   text: '#2e2e2e',
+//   background: '#fefefe',
+//   primary: '#3b82f6',
+//   accent: '#f59e0b',
+//   container: '#f0f0f0',
+//   ...
+// }
+```
+
+---
+
+## adaptColorsForMode
+
+Adapts an existing color palette to a different theme mode (light/dark) while preserving hue relationships.
+
+```typescript
+function adaptColorsForMode(
+  currentColors: Record<string, string>,
+  targetIsDark: boolean,
+  lockedColors?: Set<string>
+): Record<string, string>
+```
+
+<ParamField path="currentColors" type="Record<string, string>" required>
+  The current color palette to adapt
+</ParamField>
+
+<ParamField path="targetIsDark" type="boolean" required>
+  Whether the target mode is dark (`true`) or light (`false`)
+</ParamField>
+
+<ParamField path="lockedColors" type="Set<string>" default="new Set()">
+  Set of color role names to preserve without modification (e.g., `new Set(['primary', 'accent'])`)
+</ParamField>
+
+<ResponseField name="return" type="Record<string, string>">
+  Adapted palette with the same structure as `generateColorPalette` output
+</ResponseField>
+
+### Example
+
+```typescript
+import { adaptColorsForMode } from './colorUtils';
+
+const lightPalette = {
+  text: '#2e2e2e',
+  background: '#ffffff',
+  primary: '#3b82f6',
+  // ... other colors
+};
+
+const darkPalette = adaptColorsForMode(
+  lightPalette,
+  true,
+  new Set(['primary']) // Keep primary color unchanged
+);
+
+console.log(darkPalette.background); // '#292929'
+```
+
+---
+
+## pickOnColor
+
+Selects an accessible foreground color (with slight hue tint) for use on a given background color, ensuring WCAG AA compliance (4.5:1 contrast ratio).
+
+```typescript
+function pickOnColor(bg: string): string
+```
+
+<ParamField path="bg" type="string" required>
+  Background color in any valid CSS color format
+</ParamField>
+
+<ResponseField name="return" type="string">
+  Hex color string with optimal contrast (minimum 4.5:1 ratio)
+</ResponseField>
+
+### Example
+
+```typescript
+import { pickOnColor } from './colorUtils';
+
+const onPrimary = pickOnColor('#3b82f6');
+console.log(onPrimary); // '#ffffff' or similar high-contrast color
+
+const onDark = pickOnColor('#1a1a1a');
+console.log(onDark); // '#f5f5f5' or similar light color
+```
+
+---
+
+## mixOklch
+
+Mixes two colors in the OKLCH color space, producing perceptually uniform color blends.
+
+```typescript
+function mixOklch(c1: string, c2: string, ratio: number): string
+```
+
+<ParamField path="c1" type="string" required>
+  First color to mix
+</ParamField>
+
+<ParamField path="c2" type="string" required>
+  Second color to mix
+</ParamField>
+
+<ParamField path="ratio" type="number" required>
+  Mix ratio (0 = fully c1, 1 = fully c2, 0.5 = equal mix)
+</ParamField>
+
+<ResponseField name="return" type="string">
+  Hex color string of the mixed color
+</ResponseField>
+
+### Example
+
+```typescript
+import { mixOklch } from './colorUtils';
+
+const mixed = mixOklch('#3b82f6', '#ef4444', 0.5);
+console.log(mixed); // Perceptually balanced purple
+
+const border = mixOklch('#000000', '#ffffff', 0.85);
+console.log(border); // Light gray (85% toward white)
+```
+
+---
+
+## deriveBaseColorFromLocks
+
+Derives a suitable base color from locked colors to maintain color harmony when regenerating a palette.
+
+```typescript
+function deriveBaseColorFromLocks(
+  lockedColors: Record<string, string>,
+  harmonyMode: HarmonyMode
+): string | null
+```
+
+<ParamField path="lockedColors" type="Record<string, string>" required>
+  Object containing locked colors by role name
+</ParamField>
+
+<ParamField path="harmonyMode" type="HarmonyMode" required>
+  Color harmony mode: `'complementary'` or `'monochromatic'`
+</ParamField>
+
+<ResponseField name="return" type="string | null">
+  Derived base color as hex string, or `null` if no suitable chromatic color is found
+</ResponseField>
+
+### Example
+
+```typescript
+import { deriveBaseColorFromLocks } from './colorUtils';
+
+const baseColor = deriveBaseColorFromLocks(
+  { primary: '#3b82f6', accent: '#f59e0b' },
+  'complementary'
+);
+
+if (baseColor) {
+  console.log(baseColor); // Derived hue based on locked colors
+}
+```
+
+---
+
+## safeChroma
+
+Calculates a safe chroma value that won't clip when converted to sRGB, scaled by a vibrancy factor.
+
+```typescript
+function safeChroma(l: number, h: number, vibrancy: number): number
+```
+
+<ParamField path="l" type="number" required>
+  Lightness value in OKLCH (0-1)
+</ParamField>
+
+<ParamField path="h" type="number" required>
+  Hue value in degrees (0-360)
+</ParamField>
+
+<ParamField path="vibrancy" type="number" required>
+  Vibrancy multiplier (0-1, where 1 = maximum safe chroma)
+</ParamField>
+
+<ResponseField name="return" type="number">
+  Safe chroma value for the given lightness and hue
+</ResponseField>
+
+### Example
+
+```typescript
+import { safeChroma } from './colorUtils';
+import chroma from 'chroma-js';
+
+const l = 0.65;
+const h = 250; // Blue-purple
+const c = safeChroma(l, h, 0.85); // 85% vibrancy
+
+const color = chroma.oklch(l, c, h).hex();
+console.log(color); // Vivid, in-gamut color
+```
+
+---
+
+## maxChromaInGamut
+
+Finds the maximum chroma value for a given lightness and hue that stays within the sRGB gamut.
+
+```typescript
+function maxChromaInGamut(l: number, h: number): number
+```
+
+<ParamField path="l" type="number" required>
+  Lightness value in OKLCH (0-1)
+</ParamField>
+
+<ParamField path="h" type="number" required>
+  Hue value in degrees (0-360)
+</ParamField>
+
+<ResponseField name="return" type="number">
+  Maximum chroma value that won't clip (typically 0-0.4)
+</ResponseField>
+
+### Example
+
+```typescript
+import { maxChromaInGamut } from './colorUtils';
+import chroma from 'chroma-js';
+
+const maxC = maxChromaInGamut(0.7, 120); // Green at 70% lightness
+console.log(maxC); // ~0.28 (example)
+
+const color = chroma.oklch(0.7, maxC, 120).hex();
+console.log(color); // Most vivid green possible without clipping
+```
+
+---
+
+## Types
+
+### HarmonyMode
+
+Defines the color harmony relationship between primary and accent colors.
+
+```typescript
+type HarmonyMode = 'complementary' | 'monochromatic';
+```
+
+- `'complementary'` - Accent color is 180° opposite on the color wheel
+- `'monochromatic'` - Accent color shares the same hue as primary

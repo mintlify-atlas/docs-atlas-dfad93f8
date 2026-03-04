@@ -1,0 +1,581 @@
+---
+title: Sharing and Saving Themes
+description: Share themes with your team and save your favorite palettes
+icon: 'share-nodes'
+---
+
+## URL-Based Sharing
+
+Theme Gen automatically encodes your current theme in the URL, making sharing as simple as copying the link.
+
+### URL Structure
+
+The URL contains two parameters:
+
+- `colors` - Compact hex values for the 5 main colors
+- `mode` - Current theme mode (`light` or `dark`)
+
+**Example:**
+```
+https://themegen.com/?colors=2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6&mode=light
+```
+
+### URL Color Encoding
+
+```typescript
+// From ThemeContext.tsx
+const URL_COLOR_KEYS = ["text", "background", "primary", "container", "accent"] as const;
+
+function syncURLParams(theme: Theme, themeName: string) {
+  // Remove # and join with hyphens
+  const compact = URL_COLOR_KEYS
+    .map((key) => theme.colors[key].replace("#", ""))
+    .join("-");
+
+  const params = new URLSearchParams(window.location.search);
+  params.set("colors", compact);
+  params.set("mode", themeName);
+
+  const newURL = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState(null, "", newURL);
+}
+```
+
+<Steps>
+  <Step title="Color Format">
+    The 5 main colors are encoded as 6-character hex codes (without `#`) separated by hyphens:
+
+    ```
+    text-background-primary-container-accent
+    2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6
+    ```
+
+    This compact format keeps URLs short while encoding all essential theme data.
+  </Step>
+
+  <Step title="Derived Colors">
+    The URL only stores the 5 main colors. All other colors are derived automatically when the theme loads:
+
+    ```typescript
+    // From parseColorsFromURL in ThemeContext.tsx
+    const colors: Partial<Theme["colors"]> = {};
+    URL_COLOR_KEYS.forEach((key, i) => {
+      colors[key] = `#${hexValues[i]}`;
+    });
+
+    // Derive border and muted from text/background
+    const text = colors.text!;
+    const bg = colors.background!;
+    colors.border = mixOklch(text, bg, 0.82);
+    colors.muted = mixOklch(text, bg, 0.55);
+
+    // Derive on-colors for colored backgrounds
+    if (colors.primary) colors.onPrimary = pickOnColor(colors.primary);
+    if (colors.container) colors.onContainer = pickOnColor(colors.container);
+    if (colors.accent) colors.onAccent = pickOnColor(colors.accent);
+    ```
+
+    This ensures consistency across all theme instances while keeping the URL manageable.
+  </Step>
+
+  <Step title="Mode Switching">
+    The `mode` parameter specifies whether the URL represents a light or dark theme:
+
+    ```
+    ?colors=...&mode=light  →  Light mode theme
+    ?colors=...&mode=dark   →  Dark mode theme
+    ```
+
+    When you toggle between light and dark mode in Theme Gen, the URL updates automatically. Share different URLs for light and dark variants of the same theme.
+  </Step>
+</Steps>
+
+### How to Share
+
+<Tabs>
+  <Tab title="With Your Team">
+    **Share via URL**
+
+    1. Create or customize a theme
+    2. Copy the URL from your browser's address bar
+    3. Share via Slack, email, or your project management tool
+
+    **Best Practices:**
+    - Include both light and dark URLs
+    - Add context about what the theme is for
+    - Use URL shorteners for cleaner sharing
+
+    **Example Message:**
+    ```
+    New brand theme for the dashboard redesign:
+
+    Light: https://themegen.com/?colors=2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6&mode=light
+    Dark:  https://themegen.com/?colors=ededed-1a1a1a-6b9eff-2a2a2a-a78bfa&mode=dark
+
+    Feedback welcome!
+    ```
+  </Tab>
+
+  <Tab title="In Documentation">
+    **Store in Your README**
+
+    ```markdown
+    ## Theme
+
+    Our design system uses Theme Gen for color management.
+
+    ### Current Theme
+    - [Light Mode](https://themegen.com/?colors=2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6&mode=light)
+    - [Dark Mode](https://themegen.com/?colors=ededed-1a1a1a-6b9eff-2a2a2a-a78bfa&mode=dark)
+
+    To modify the theme:
+    1. Open one of the links above
+    2. Make your changes
+    3. Export the updated theme
+    4. Update `src/styles/theme.css`
+    5. Update these README links with the new URLs
+    ```
+
+    **In Pull Requests**
+
+    When changing theme colors, include a Theme Gen URL in your PR description:
+
+    ```markdown
+    ## Changes
+    - Improved text contrast for accessibility
+    - Adjusted primary color to match brand guidelines
+
+    [Preview theme](https://themegen.com/?colors=...)
+
+    **Before:** 4.3:1 text contrast (failed WCAG AA)
+    **After:** 7.2:1 text contrast (passes WCAG AAA)
+    ```
+  </Tab>
+
+  <Tab title="With Clients">
+    **Present Options**
+
+    Create multiple theme variations and share them:
+
+    ```markdown
+    # Brand Theme Options
+
+    ## Option A - Bold
+    High contrast, vibrant colors
+    - [Light](https://themegen.com/?colors=...)
+    - [Dark](https://themegen.com/?colors=...)
+
+    ## Option B - Subtle  
+    Softer palette, calming tones
+    - [Light](https://themegen.com/?colors=...)
+    - [Dark](https://themegen.com/?colors=...)
+
+    ## Option C - Energetic
+    Bright accents, modern feel
+    - [Light](https://themegen.com/?colors=...)
+    - [Dark](https://themegen.com/?colors=...)
+    ```
+
+    **Benefits:**
+    - Clients can interact with live themes
+    - Easy to iterate based on feedback
+    - No need to rebuild prototypes for color changes
+  </Tab>
+
+  <Tab title="On Social Media">
+    **Share Your Creations**
+
+    1. Create an interesting theme
+    2. Take a screenshot
+    3. Share with the Theme Gen URL
+
+    **Example Post:**
+    ```
+    🎨 Created a vibrant theme for summer campaigns
+    
+    WCAG AAA compliant with playful accent colors
+    
+    Try it: [Theme Gen URL]
+    
+    #webdesign #accessibility #colortheory
+    ```
+
+    <Note>
+      Consider using a URL shortener like bit.ly or tinyurl.com for cleaner social media posts.
+    </Note>
+  </Tab>
+</Tabs>
+
+## localStorage Persistence
+
+Theme Gen automatically saves your work to browser localStorage, so you never lose your progress.
+
+### What Gets Saved
+
+<Accordion title="Current Theme">
+  Your active theme (light or dark) is saved automatically:
+
+  ```typescript
+  // From ThemeContext.tsx
+  localStorage.setItem("theme", themeName); // "light" or "dark"
+  ```
+
+  When you return to Theme Gen, you'll see the same mode you were working with.
+</Accordion>
+
+<Accordion title="Custom Color Palettes">
+  Both light and dark theme colors are saved as you modify them:
+
+  ```typescript
+  // From ThemeContext.tsx  
+  const savedThemes = JSON.parse(
+    localStorage.getItem("customThemes") || "{}"
+  );
+  savedThemes[themeName] = theme;
+  localStorage.setItem("customThemes", JSON.stringify(savedThemes));
+  ```
+
+  This means:
+  - Your light mode colors persist when you switch to dark
+  - Your dark mode colors persist when you switch to light
+  - Both are available when you return to Theme Gen
+</Accordion>
+
+<Accordion title="URL Takes Priority">
+  When you visit Theme Gen with a URL containing colors, those colors take priority over localStorage:
+
+  ```typescript
+  useEffect(() => {
+    const urlColors = parseColorsFromURL();
+    if (urlColors) {
+      // URL colors override localStorage
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode") === "dark" ? "dark" : "light";
+      const base = themes[mode];
+      const hydrated: Theme = {
+        ...base,
+        colors: { ...base.colors, ...urlColors },
+      };
+      setTheme(hydrated);
+    } else {
+      // Fall back to localStorage
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme && themes[savedTheme]) {
+        setTheme(themes[savedTheme]);
+      }
+    }
+  }, []);
+  ```
+
+  This ensures shared URLs always display the exact intended colors, while localStorage provides continuity for your personal work.
+</Accordion>
+
+### Benefits
+
+- **No account required** - Start creating immediately
+- **Automatic saving** - Changes persist as you work
+- **Per-browser storage** - Each browser/device maintains its own themes
+- **Privacy-focused** - Data stays on your device
+
+<Info>
+  localStorage data persists until you clear your browser data. If you need themes available across devices, use the [Saved Themes](#saved-themes) feature and export them.
+</Info>
+
+## Saved Themes
+
+The Saved Themes feature lets you bookmark your favorite themes for quick access.
+
+### Saving a Theme
+
+<Steps>
+  <Step title="Open Saved Themes Panel">
+    Click the **Bookmark** icon in the toolbar. A badge shows how many themes you've saved.
+  </Step>
+
+  <Step title="Name Your Theme">
+    Enter a descriptive name in the input field:
+    - "Brand Colors - Light"
+    - "Dashboard Dark Mode"
+    - "Accessible High Contrast"
+    - "Client Presentation Option B"
+  </Step>
+
+  <Step title="Click Save">
+    The theme is added to your collection with:
+    - The name you provided
+    - Current colors (all 18 color values)
+    - Current mode (light or dark)
+    - Timestamp
+
+    ```typescript
+    // From ThemeContext.tsx
+    const saveCurrentTheme = useCallback((name: string) => {
+      const entry: SavedTheme = {
+        id: `saved-${Date.now()}`,
+        name: name.trim() || "Untitled Theme",
+        theme: { ...theme, colors: { ...theme.colors } },
+        themeName: themeName,
+        savedAt: new Date().toISOString(),
+      };
+      setSavedThemes((prev) => {
+        const updated = [entry, ...prev];
+        localStorage.setItem("userSavedThemes", JSON.stringify(updated));
+        return updated;
+      });
+    }, [theme, themeName]);
+    ```
+  </Step>
+</Steps>
+
+### Loading a Saved Theme
+
+1. Open the Saved Themes panel (Bookmark icon)
+2. Click on any saved theme
+3. The theme loads instantly, preserving:
+   - All 18 color values
+   - Original mode (light/dark)
+   - Color relationships
+
+```typescript
+// From ThemeContext.tsx
+const loadSavedTheme = useCallback((saved: SavedTheme) => {
+  pushHistory();  // Save current state for undo
+  setThemeName(saved.themeName);
+  setTheme(saved.theme);
+  updateCSSVariables(saved.theme);
+  localStorage.setItem("theme", saved.themeName);
+}, [pushHistory]);
+```
+
+<Note>
+  Loading a saved theme adds your current theme to the undo history, so you can press Ctrl+Z to switch back.
+</Note>
+
+### Deleting Saved Themes
+
+1. Open the Saved Themes panel
+2. Find the theme you want to remove
+3. Click the delete/trash icon
+4. The theme is removed from localStorage
+
+### Use Cases
+
+<AccordionGroup>
+  <Accordion title="Brand Variations">
+    Save multiple variations of your brand theme:
+
+    - "Brand - Main (Light)"
+    - "Brand - Main (Dark)"
+    - "Brand - High Contrast (Light)"
+    - "Brand - High Contrast (Dark)"
+    - "Brand - Marketing (Light)"
+    - "Brand - Marketing (Dark)"
+
+    Quickly switch between them when exporting for different projects.
+  </Accordion>
+
+  <Accordion title="Client Presentations">
+    Save multiple options before a client meeting:
+
+    - "Client XYZ - Option A Bold"
+    - "Client XYZ - Option B Subtle"
+    - "Client XYZ - Option C Energetic"
+
+    Load each one during the presentation to show how they look with real UI components.
+  </Accordion>
+
+  <Accordion title="Seasonal Themes">
+    Create and save themes for different seasons or campaigns:
+
+    - "Summer 2024 - Bright"
+    - "Fall 2024 - Warm"
+    - "Winter 2024 - Cool"
+    - "Spring 2025 - Fresh"
+
+    Activate them when needed without recreating from scratch.
+  </Accordion>
+
+  <Accordion title="Accessibility Testing">
+    Save baseline themes for testing:
+
+    - "WCAG AAA Reference Light"
+    - "WCAG AAA Reference Dark"
+    - "High Contrast - Vision Impaired"
+    - "Colorblind Safe - Deuteranopia"
+
+    Use these as starting points for new themes that must meet strict requirements.
+  </Accordion>
+</AccordionGroup>
+
+### Storage Details
+
+**SavedTheme Interface:**
+```typescript
+export interface SavedTheme {
+  id: string;          // "saved-1704153600000"
+  name: string;        // "Brand Colors - Light"
+  theme: Theme;        // Complete theme object with all colors
+  themeName: string;   // "light" or "dark"
+  savedAt: string;     // ISO 8601 timestamp
+}
+```
+
+**localStorage Key:**
+```typescript
+localStorage.getItem("userSavedThemes")  // JSON array of SavedTheme objects
+```
+
+<Info>
+  Saved themes are stored in localStorage, which typically has a 5-10MB limit. Each theme is ~1KB, so you can save hundreds of themes without issues.
+</Info>
+
+## Exporting Saved Themes
+
+To use saved themes across devices or share them with your team:
+
+1. Load a saved theme
+2. Click the **Export** button
+3. Copy the generated code
+4. Store in version control or documentation
+
+For the URL:
+1. Load a saved theme
+2. Copy the URL from your browser's address bar
+3. Share or bookmark
+
+<Accordion title="Backing Up Saved Themes">
+  Since saved themes are stored in browser localStorage, you can back them up:
+
+  **Manual Backup:**
+  1. Open browser DevTools (F12)
+  2. Go to Application (Chrome) or Storage (Firefox) tab
+  3. Find localStorage → Theme Gen domain
+  4. Copy the value of `userSavedThemes`
+  5. Save to a file
+
+  **Restore from Backup:**
+  1. Open browser DevTools
+  2. Go to localStorage
+  3. Set `userSavedThemes` to your backed-up value
+  4. Refresh Theme Gen
+
+  <Note>
+    Consider storing your most important theme URLs in your project README as a lightweight backup solution.
+  </Note>
+</Accordion>
+
+## Best Practices
+
+<Steps>
+  <Step title="Use Descriptive Names">
+    When saving themes, use names that include:
+    - Purpose: "Dashboard", "Marketing Site", "Mobile App"
+    - Variant: "High Contrast", "Subtle", "Bold"
+    - Mode: "Light" or "Dark"
+
+    **Good:** "Dashboard - High Contrast (Dark)"
+    
+    **Bad:** "Theme 1", "New Theme", "Untitled"
+  </Step>
+
+  <Step title="Save Before Experimenting">
+    Before making major changes:
+    1. Save your current theme
+    2. Make experimental changes
+    3. Compare with saved version
+    4. Keep the better one
+
+    Use undo/redo for quick iterations, saved themes for major variations.
+  </Step>
+
+  <Step title="Document URLs in Your Project">
+    Add Theme Gen URLs to your project documentation:
+
+    ```markdown
+    ## Design System - Colors
+
+    Theme Generator Links:
+    - [Light Theme](https://themegen.com/?colors=...&mode=light)
+    - [Dark Theme](https://themegen.com/?colors=...&mode=dark)
+
+    Last updated: 2024-01-15
+    ```
+
+    This makes it easy for the team to modify and export themes.
+  </Step>
+
+  <Step title="Version Control Your Exports">
+    Treat theme exports like code:
+    - Commit to git with descriptive messages
+    - Use pull requests for theme changes
+    - Include before/after Theme Gen URLs in PR descriptions
+    - Tag releases with theme versions
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="My saved themes disappeared">
+    Saved themes are stored in browser localStorage. They can be lost if:
+    - You cleared browser data/cookies
+    - You're using incognito/private mode
+    - You're on a different browser or device
+
+    **Prevention:**
+    - Copy important theme URLs to your project README
+    - Export themes and store in version control
+    - Use browser sync if available
+  </Accordion>
+
+  <Accordion title="URL isn't loading my theme">
+    Check that:
+    - The URL is complete (includes both `colors` and `mode` parameters)
+    - Color values are valid 6-character hex codes
+    - There are exactly 5 color values separated by hyphens
+    - The URL hasn't been truncated by email or chat apps
+
+    **Valid:**
+    ```
+    ?colors=2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6&mode=light
+    ```
+
+    **Invalid:**
+    ```
+    ?colors=2d2d2d-fcfcfc-3b82f6&mode=light  (only 3 colors)
+    ?colors=2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6  (missing mode)
+    ```
+  </Accordion>
+
+  <Accordion title="Colors don't match after sharing">
+    If colors look different on another person's device:
+    - Check display calibration and color profiles
+    - Verify both are viewing the exact same URL
+    - Compare hex values in the export modal
+    - Some displays (especially older ones) may not support the full color gamut
+
+    For critical color matching, share hex values and have team members verify them against brand guidelines.
+  </Accordion>
+
+  <Accordion title="Can't save new themes">
+    If the save button isn't working:
+    - Check that localStorage isn't disabled
+    - Verify you're not in private/incognito mode
+    - Clear old saved themes if you have many (localStorage has size limits)
+    - Try a different browser
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Creating Themes" icon="palette" href="/guides/creating-themes">
+    Learn the theme creation workflow
+  </Card>
+  <Card title="Exporting Themes" icon="download" href="/guides/exporting">
+    Export your themes in multiple formats
+  </Card>
+  <Card title="Accessibility" icon="universal-access" href="/guides/accessibility">
+    Understand WCAG standards and contrast requirements
+  </Card>
+</CardGroup>

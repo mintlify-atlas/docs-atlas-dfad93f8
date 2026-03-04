@@ -1,0 +1,491 @@
+---
+title: Export
+description: Export themes to CSS, Tailwind, SCSS, SwiftUI, and React Native formats
+---
+
+## Overview
+
+Theme Gen provides a comprehensive export system that converts your theme into production-ready code for multiple platforms and frameworks. Access the export modal by clicking the export button in the toolbar.
+
+## Export Formats
+
+The export system supports five major formats:
+
+- **CSS** - CSS custom properties (variables)
+- **Tailwind** - Tailwind CSS v3.4 and v4.2 configs
+- **SCSS** - Sass variables and maps
+- **SwiftUI** - Swift Color extensions
+- **React Native** - TypeScript color objects
+
+### Format Selection
+
+```tsx
+{(["css", "tailwind", "scss", "swiftui", "reactnative"] as const).map((format) => (
+  <button
+    onClick={() => dispatch({ type: 'SET_EXPORT_FORMAT', payload: format })}
+    className={state.exportFormat === format ? "active" : ""}
+  >
+    {labels[format]}
+  </button>
+))}
+```
+
+## Export Modes
+
+Each format supports three export modes:
+
+- **Light** - Light mode colors only
+- **Dark** - Dark mode colors only
+- **Both** - Combined light and dark mode output
+
+```tsx
+{(["light", "dark", "both"] as const).map((mode) => (
+  <input
+    type="radio"
+    name="exportMode"
+    value={mode}
+    checked={state.exportMode === mode}
+    onChange={(e) =>
+      dispatch({
+        type: 'SET_EXPORT_MODE',
+        payload: e.target.value as "light" | "dark" | "both"
+      })
+    }
+  />
+))}
+```
+
+<Info>
+The system automatically retrieves both light and dark mode colors from localStorage, even if you've only customized one mode.
+</Info>
+
+### Retrieving Both Modes
+
+```tsx
+const getColorsForMode = (mode: "light" | "dark"): Record<string, string> => {
+  if (mode === themeName) return theme.colors as Record<string, string>;
+  const saved = JSON.parse(localStorage.getItem("customThemes") || "{}");
+  if (saved[mode]) return saved[mode].colors;
+  return themes[mode].colors as Record<string, string>;
+};
+```
+
+This falls back to default themes if you haven't customized a mode.
+
+## Color Formats
+
+All export formats support four color representations:
+
+- **HEX** - `#3b82f6`
+- **RGB** - `rgb(59, 130, 246)`
+- **HSL** - `hsl(217, 91%, 60%)`
+- **OKLCH** - `oklch(0.62 0.23 255)`
+
+### Color Conversion
+
+```tsx
+const formatColor = (
+  hexColor: string,
+  format: "hex" | "rgb" | "hsl" | "oklch",
+): string => {
+  switch (format) {
+    case "hex":
+      return hexColor;
+    case "rgb": {
+      const rgb = hexToRgb(hexColor);
+      return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    }
+    case "hsl": {
+      const hsl = rgbToHsl(hexToRgb(hexColor));
+      return `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+    }
+    case "oklch":
+      return chroma(hexColor).css("oklch");
+    default:
+      return hexColor;
+  }
+};
+```
+
+<Tip>
+OKLCH provides the most perceptually uniform colors but has limited browser support. Use RGB or HSL for maximum compatibility.
+</Tip>
+
+## CSS Export
+
+Generates CSS custom properties for use in any web project.
+
+### Light Mode Only
+
+```css
+:root {
+  --color-text: #1a1a1a;
+  --color-background: #ffffff;
+  --color-primary: #3b82f6;
+  --color-container: #f5f5f5;
+  --color-accent: #8b5cf6;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-onPrimary: #ffffff;
+  --color-onContainer: #1a1a1a;
+  --color-onAccent: #ffffff;
+  --color-onSuccess: #ffffff;
+  --color-onError: #ffffff;
+  --color-onWarning: #000000;
+  --color-border: #e5e5e5;
+  --color-muted: #737373;
+  --color-ring: #3b82f6;
+}
+```
+
+### Both Modes
+
+```css
+:root {
+  --color-text: #e5e5e5;
+  --color-background: #0a0a0a;
+  /* ... light mode colors */
+}
+
+.dark {
+  --color-text: #e5e5e5;
+  --color-background: #0a0a0a;
+  /* ... dark mode colors */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e5e5e5;
+    --color-background: #0a0a0a;
+    /* ... dark mode colors */
+  }
+}
+```
+
+Provides both a `.dark` class for manual toggling and a media query for automatic detection.
+
+### Implementation
+
+```tsx
+const cssVars = (colors: Record<string, string>, indent = "  ") =>
+  Object.entries(colors)
+    .map(([k, v]) => `${indent}--color-${k}: ${v};`)
+    .join("\n");
+
+switch (state.exportMode) {
+  case "light":
+    return `:root {\n${cssVars(light)}\n}`;
+  case "dark":
+    return `:root {\n${cssVars(dark)}\n}`;
+  case "both":
+    return `:root {\n${cssVars(light)}\n}\n\n.dark {\n${cssVars(dark)}\n}\n\n@media (prefers-color-scheme: dark) {\n  :root {\n${cssVars(dark, "    ")}\n  }\n}`;
+}
+```
+
+## Tailwind CSS Export
+
+Exports Tailwind configuration for both v3.4 and v4.2.
+
+### Tailwind v4.2 (Default)
+
+Uses the new `@theme` directive:
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-text: #1a1a1a;
+  --color-background: #ffffff;
+  --color-primary: #3b82f6;
+  --color-container: #f5f5f5;
+  --color-accent: #8b5cf6;
+  /* ... */
+}
+
+@variant dark {
+  @theme {
+    --color-text: #e5e5e5;
+    --color-background: #0a0a0a;
+    /* ... */
+  }
+}
+```
+
+### Tailwind v3.4
+
+Uses traditional config file:
+
+```js
+// tailwind.config.js
+module.exports = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        text: '#1a1a1a',
+        background: '#ffffff',
+        primary: '#3b82f6',
+        container: '#f5f5f5',
+        accent: '#8b5cf6',
+        /* ... */
+      }
+    }
+  }
+}
+
+/* Add to your global CSS: */
+:root {
+  --color-text: #1a1a1a;
+  /* ... */
+}
+
+.dark {
+  --color-text: #e5e5e5;
+  /* ... */
+}
+```
+
+### Version Selection
+
+```tsx
+{state.exportFormat === "tailwind" && (
+  <div>
+    {(["4", "3"] as const).map((ver) => (
+      <button
+        onClick={() => dispatch({ type: 'SET_TAILWIND_VERSION', payload: ver })}
+      >
+        {ver === "4" ? "v4.2" : "v3.4"}
+      </button>
+    ))}
+  </div>
+)}
+```
+
+## SCSS Export
+
+Generates Sass variables and maps.
+
+### Light Mode Only
+
+```scss
+$color-text: #1a1a1a;
+$color-background: #ffffff;
+$color-primary: #3b82f6;
+$color-container: #f5f5f5;
+$color-accent: #8b5cf6;
+/* ... */
+
+$colors: (
+  "text": #1a1a1a,
+  "background": #ffffff,
+  "primary": #3b82f6,
+  "container": #f5f5f5,
+  "accent": #8b5cf6,
+  /* ... */
+);
+```
+
+### Both Modes
+
+```scss
+// Light theme
+$light-text: #1a1a1a;
+$light-background: #ffffff;
+/* ... */
+
+$light-colors: (
+  "text": #1a1a1a,
+  "background": #ffffff,
+  /* ... */
+);
+
+// Dark theme
+$dark-text: #e5e5e5;
+$dark-background: #0a0a0a;
+/* ... */
+
+$dark-colors: (
+  "text": #e5e5e5,
+  "background": #0a0a0a,
+  /* ... */
+);
+```
+
+## SwiftUI Export
+
+Exports Swift Color extensions for iOS/macOS apps.
+
+### Using RGB Format
+
+```swift
+import SwiftUI
+
+struct Theme {
+    static let text = Color(red: 0.102, green: 0.102, blue: 0.102)
+    static let background = Color(red: 1.000, green: 1.000, blue: 1.000)
+    static let primary = Color(red: 0.231, green: 0.510, blue: 0.965)
+    static let container = Color(red: 0.961, green: 0.961, blue: 0.961)
+    static let accent = Color(red: 0.545, green: 0.361, blue: 0.965)
+    /* ... */
+}
+```
+
+### Using HEX Format
+
+Includes a custom hex initializer:
+
+```swift
+import SwiftUI
+
+struct Theme {
+    static let text = Color(hex: "#1a1a1a")
+    static let background = Color(hex: "#ffffff")
+    static let primary = Color(hex: "#3b82f6")
+    /* ... */
+}
+
+// Color hex initializer
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+```
+
+### Both Modes (Structured)
+
+```swift
+import SwiftUI
+
+struct AppColors {
+    let text: Color
+    let background: Color
+    let primary: Color
+    /* ... */
+}
+
+extension AppColors {
+    static let light = AppColors(
+        text: Color(hex: "#1a1a1a"),
+        background: Color(hex: "#ffffff"),
+        /* ... */
+    )
+
+    static let dark = AppColors(
+        text: Color(hex: "#e5e5e5"),
+        background: Color(hex: "#0a0a0a"),
+        /* ... */
+    )
+}
+```
+
+<Note>
+SwiftUI export automatically uses RGB format when you select RGB, HSL, or OKLCH (since SwiftUI doesn't natively support those string formats).
+</Note>
+
+## React Native Export
+
+Exports TypeScript-friendly color objects.
+
+### Light Mode Only
+
+```typescript
+// theme.ts
+export const colors = {
+  text: '#1a1a1a',
+  background: '#ffffff',
+  primary: '#3b82f6',
+  container: '#f5f5f5',
+  accent: '#8b5cf6',
+  /* ... */
+} as const;
+
+export type ColorName = keyof typeof colors;
+```
+
+### Both Modes
+
+```typescript
+// theme.ts
+export const lightColors = {
+  text: '#1a1a1a',
+  background: '#ffffff',
+  primary: '#3b82f6',
+  /* ... */
+} as const;
+
+export const darkColors = {
+  text: '#e5e5e5',
+  background: '#0a0a0a',
+  primary: '#60a5fa',
+  /* ... */
+} as const;
+
+export type ColorName = keyof typeof lightColors;
+
+// Usage:
+// import { useColorScheme } from 'react-native';
+// const colors = useColorScheme() === 'dark' ? darkColors : lightColors;
+```
+
+<Warning>
+React Native doesn't support OKLCH. When OKLCH format is selected, the export automatically falls back to RGB.
+</Warning>
+
+### OKLCH Fallback
+
+```tsx
+// React Native doesn't support OKLCH natively, fall back to rgb
+const rnFallback = state.colorFormat === "oklch" ? "rgb" : undefined;
+const rnLight = rnFallback ? fmt(getColorsForMode("light"), rnFallback) : light;
+const rnDark = rnFallback ? fmt(getColorsForMode("dark"), rnFallback) : dark;
+```
+
+## Copy to Clipboard
+
+The export modal includes a copy button:
+
+```tsx
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(generateExportCode());
+    dispatch({ type: 'SET_COPIED', payload: true });
+    setTimeout(() => dispatch({ type: 'SET_COPIED', payload: false }), 2000);
+  } catch (err) {
+    console.error("Failed to copy: ", err);
+  }
+};
+```
+
+The button shows a checkmark for 2 seconds after successful copy.
+
+## Best Practices
+
+- **Use OKLCH** for the most perceptually uniform colors (if browser support allows)
+- **Export both modes** for comprehensive theme systems
+- **Choose HEX** for maximum compatibility across all platforms
+- **Test SwiftUI exports** on both iOS and macOS for color accuracy
+- **Use TypeScript types** from React Native exports for type safety
+
+## Related Features
+
+- [Live Preview](/features/live-preview) - Preview before exporting
+- [URL Sharing](/features/url-sharing) - Share themes instead of exporting
+- [Contrast Auditing](/features/contrast-auditing) - Ensure accessibility before export

@@ -1,0 +1,344 @@
+---
+title: Smart Shuffle
+description: Generate accessible color palettes with intelligent randomization
+---
+
+## Overview
+
+Smart Shuffle is Theme Gen's intelligent palette generation system. It creates harmonious, accessible color schemes with a single click while respecting locked colors and harmony modes.
+
+## How It Works
+
+When you click the shuffle button, Theme Gen:
+
+1. Derives a base color from locked colors (or generates random)
+2. Generates a complete palette using color harmony rules
+3. Validates WCAG contrast requirements
+4. Repeats up to 24 times until an accessible palette is found
+5. Applies the new palette to unlocked colors only
+
+### The Shuffle Function
+
+```tsx
+const smartShuffle = () => {
+  pushHistory();
+  const lockedColorValues: Record<string, string> = {};
+
+  Object.entries(theme.colors).forEach(([property, color]) => {
+    if (lockedColors.has(property)) {
+      lockedColorValues[property] = color;
+    }
+  });
+
+  const randomHex = () =>
+    `#${Math.floor(Math.random() * 16777215)
+      .toString(16)
+      .padStart(6, "0")}`;
+
+  let palette = generateColorPalette(
+    deriveBaseColorFromLocks(lockedColorValues, harmonyMode) || randomHex(),
+    themeName === "dark",
+    lockedColorValues,
+    harmonyMode,
+  );
+
+  for (
+    let index = 0;
+    index < 24 && !isPaletteAccessible(palette);
+    index += 1
+  ) {
+    palette = generateColorPalette(
+      deriveBaseColorFromLocks(lockedColorValues, harmonyMode) || randomHex(),
+      themeName === "dark",
+      lockedColorValues,
+      harmonyMode,
+    );
+  }
+
+  Object.entries(palette).forEach(([property, color]) => {
+    if (!lockedColors.has(property)) {
+      updateThemeProperty(["colors", property], color);
+    }
+  });
+};
+```
+
+<Info>
+Smart Shuffle always saves your current theme to history, allowing you to undo if you don't like the result.
+</Info>
+
+## Base Color Derivation
+
+When you have locked colors, Smart Shuffle derives the base color intelligently:
+
+### Derivation Priority
+
+```tsx
+export function deriveBaseColorFromLocks(
+  lockedColors: Record<string, string>,
+  harmonyMode: HarmonyMode
+): string | null {
+  const jitter = (range: number) => (Math.random() - 0.5) * 2 * range;
+
+  // 1. Primary locked — use its hue directly
+  if (lockedColors.primary) {
+    const [, c, h] = chroma(lockedColors.primary).oklch();
+    if (c > 0.01 && !isNaN(h)) {
+      const hue = ((h + jitter(15)) % 360 + 360) % 360;
+      return chroma.oklch(0.5, 0.15, hue).hex();
+    }
+  }
+
+  // 2. Accent locked — reverse-engineer primary hue via harmony offset
+  if (lockedColors.accent) {
+    const [, c, h] = chroma(lockedColors.accent).oklch();
+    if (c > 0.01 && !isNaN(h)) {
+      const offset = getAccentOffset(harmonyMode);
+      const hue = ((h - offset + jitter(25)) % 360 + 360) % 360;
+      return chroma.oklch(0.5, 0.15, hue).hex();
+    }
+  }
+
+  // 3. Background / text / container — extract hue tint if chromatic
+  for (const key of ["background", "text", "container"] as const) {
+    if (lockedColors[key]) {
+      const [, c, h] = chroma(lockedColors[key]).oklch();
+      if (c > 0.01 && !isNaN(h)) {
+        const hue = ((h + jitter(25)) % 360 + 360) % 360;
+        return chroma.oklch(0.5, 0.15, hue).hex();
+      }
+    }
+  }
+
+  return null;
+}
+```
+
+The system checks in order:
+1. **Primary color** - Uses its hue with ±15° jitter
+2. **Accent color** - Reverse-engineers primary hue based on harmony mode
+3. **Neutral colors** - Extracts hue tint if chromatic with ±25° jitter
+
+<Tip>
+Jitter (random variation) ensures each shuffle produces a unique result even with the same locked colors.
+</Tip>
+
+## Color Harmony Modes
+
+Smart Shuffle supports two harmony modes:
+
+### Complementary Mode
+
+```tsx
+function getAccentOffset(mode: HarmonyMode): number {
+  return mode === "complementary" ? 180 : 0;
+}
+```
+
+- **Primary hue**: Base color
+- **Accent hue**: 180° opposite on color wheel
+- Creates high contrast, vibrant themes
+
+### Monochromatic Mode
+
+- **Primary hue**: Base color
+- **Accent hue**: Same as primary
+- Creates subtle, harmonious themes with less contrast
+
+## Palette Generation Algorithm
+
+The `generateColorPalette` function creates a complete theme:
+
+### Hue Remapping
+
+To avoid muddy greens, Theme Gen remaps hues around 110° (yellow-green):
+
+```tsx
+function remapHue(hue: number): number {
+  const h = ((hue % 360) + 360) % 360;
+  const center = 110;
+  const halfWidth = 40;
+  const maxDeflection = 25;
+  const dist = Math.abs(h - center);
+  if (dist >= halfWidth) return h;
+  const t = 1 - dist / halfWidth;
+  const deflection = maxDeflection * 0.5 * (1 + Math.cos(Math.PI * (1 - t)));
+  return h < center ? h - deflection : h + deflection;
+}
+```
+
+This nudges problematic hues toward cleaner blues or yellows.
+
+### Lightness Values
+
+Different roles get different lightness (L in OKLCH):
+
+```tsx
+const primaryL = isDarkMode ? 0.75 : 0.50;
+const accentL = isDarkMode ? 0.78 : 0.52;
+
+const text = chroma
+  .oklch(
+    isDarkMode ? 0.93 : 0.18,
+    safeChroma(isDarkMode ? 0.93 : 0.18, primaryHue, 0.15),
+    primaryHue
+  )
+  .hex();
+
+const background = chroma
+  .oklch(
+    isDarkMode ? 0.16 : 0.985,
+    safeChroma(isDarkMode ? 0.16 : 0.985, primaryHue, 0.08),
+    primaryHue
+  )
+  .hex();
+```
+
+**Light Mode:**
+- Background: 98.5% lightness
+- Text: 18% lightness
+- Primary: 50% lightness
+- Container: 94% lightness
+- Accent: 52% lightness
+
+**Dark Mode:**
+- Background: 16% lightness
+- Text: 93% lightness
+- Primary: 75% lightness
+- Container: 25% lightness
+- Accent: 78% lightness
+
+### Gamut-Safe Chroma
+
+Not all OKLCH colors are displayable in sRGB. Theme Gen automatically limits chroma:
+
+```tsx
+export function maxChromaInGamut(l: number, h: number): number {
+  if (isNaN(h) || l <= 0 || l >= 1) return 0;
+  let lo = 0;
+  let hi = 0.4;
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2;
+    if (chroma.oklch(l, mid, h).clipped()) {
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+  }
+  return lo;
+}
+
+export function safeChroma(l: number, h: number, vibrancy: number): number {
+  return maxChromaInGamut(l, h) * Math.max(0, Math.min(1, vibrancy));
+}
+```
+
+This binary search finds the maximum displayable chroma, then scales by vibrancy:
+
+- **Text/Background**: 8-15% vibrancy (subtle tint)
+- **Container**: 15% vibrancy
+- **Primary**: 85% vibrancy (highly saturated)
+- **Accent**: 75% vibrancy
+- **State colors**: 75% vibrancy
+
+<Note>
+OKLCH ensures perceptually uniform colors - a 50% lightness color looks equally bright regardless of hue.
+</Note>
+
+## State Colors
+
+Success, error, and warning colors use fixed hues with primary's lightness:
+
+```tsx
+const successHue = 155;  // Green
+const errorHue = 25;     // Red
+const warningHue = 70;   // Yellow
+
+let success = chroma.oklch(
+  primaryL,
+  safeChroma(primaryL, successHue, 0.75),
+  successHue
+).hex();
+
+success = nudgeForContrastOklch(success, background, 3);
+```
+
+This ensures visual consistency - state colors have the same perceptual weight as primary.
+
+## Accessibility Validation
+
+After generation, all colors are nudged to meet contrast minimums:
+
+```tsx
+primary = nudgeForContrastOklch(primary, background, 3);
+accent = nudgeForContrastOklch(accent, background, 3);
+const finalText = nudgeForContrastOklch(text, background, 7);
+success = nudgeForContrastOklch(success, background, 3);
+error = nudgeForContrastOklch(error, background, 3);
+warning = nudgeForContrastOklch(warning, background, 3);
+```
+
+The retry loop continues until all required audits pass:
+
+```tsx
+function isPaletteAccessible(palette: Record<string, string>) {
+  return getContrastAudit(palette)
+    .filter((item) => item.required)
+    .every((item) => item.pass);
+}
+```
+
+<Info>
+With 24 attempts, there's a very high probability of finding an accessible palette. If none is found, the last attempt is used.
+</Info>
+
+## On-Colors
+
+Each colored surface gets a contrasting text color:
+
+```tsx
+export function pickOnColor(bg: string): string {
+  const [, , h] = chroma(bg).oklch();
+  const hue = isNaN(h) ? 0 : h;
+
+  const whiteContrast = getContrastRatio("#ffffff", bg);
+  const blackContrast = getContrastRatio("#000000", bg);
+  const goLight = whiteContrast >= blackContrast;
+
+  let l = goLight ? 0.97 : 0.06;
+  const step = goLight ? -0.02 : 0.02;
+
+  for (let i = 0; i < 30; i++) {
+    const c = safeChroma(l, hue, 0.25);
+    const candidate = chroma.oklch(l, c, hue).hex();
+    if (getContrastRatio(candidate, bg) >= 4.5) return candidate;
+    l += step;
+  }
+
+  return goLight ? "#ffffff" : "#000000";
+}
+```
+
+This:
+1. Determines if light or dark text has better contrast
+2. Starts near that extreme with a slight hue tint
+3. Walks toward the background until 4.5:1 contrast is met
+4. Falls back to pure white/black if needed
+
+## Best Practices
+
+- Lock 1-2 brand colors before shuffling for consistent results
+- Try both harmony modes to see different styles
+- Shuffle multiple times - each result is unique
+- Use undo (Cmd/Ctrl+Z) if you want to go back
+- Check the toolbar to ensure 5/5 audits are passing
+
+<Warning>
+If shuffling repeatedly produces inaccessible themes, your locked colors may be too similar in lightness to the background.
+</Warning>
+
+## Related Features
+
+- [Color Locking](/features/color-locking) - Control which colors shuffle
+- [Contrast Auditing](/features/contrast-auditing) - Understand accessibility checking
+- [Live Preview](/features/live-preview) - See results instantly

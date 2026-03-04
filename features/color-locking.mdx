@@ -1,0 +1,282 @@
+---
+title: Color Locking
+description: Lock specific colors to preserve them during palette generation
+---
+
+## Overview
+
+Color Locking allows you to freeze specific colors in your palette, preventing them from changing during Smart Shuffle operations or automatic color derivations. This is essential for maintaining brand colors while exploring variations.
+
+## How to Lock Colors
+
+Each color button in the theme customizer has a lock icon:
+
+1. **Hover** over any color button to reveal the lock icon
+2. **Click** the lock icon to toggle the lock state
+3. Locked colors show the icon permanently
+4. Unlocked colors hide the icon until hover
+
+### Lock Button UI
+
+```tsx
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    onLockToggle(property);
+  }}
+  className={`absolute -top-2 -right-2 p-1 rounded-full border transition-opacity ${
+    isLocked ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+  }`}
+  title={isLocked ? "Unlock color" : "Lock color"}
+>
+  {isLocked ? (
+    <Lock size={9} strokeWidth={3.25} />
+  ) : (
+    <Unlock size={9} strokeWidth={3.25} />
+  )}
+</button>
+```
+
+The lock state is managed via a `Set<string>` in the component state:
+
+```tsx
+const [lockedColors, setLockedColors] = useState<Set<string>>(new Set());
+
+const handleLockToggle = (property: string) => {
+  setLockedColors((prev) => {
+    const newSet = new Set(prev);
+    if (newSet.has(property)) {
+      newSet.delete(property);
+    } else {
+      newSet.add(property);
+    }
+    return newSet;
+  });
+};
+```
+
+<Tip>
+You can lock any combination of colors - just your brand primary, all neutrals, or even the entire palette.
+</Tip>
+
+## Lock Behavior During Shuffle
+
+When you trigger a Smart Shuffle with locked colors:
+
+### 1. Locked Colors Are Extracted
+
+```tsx
+const lockedColorValues: Record<string, string> = {};
+
+Object.entries(theme.colors).forEach(([property, color]) => {
+  if (lockedColors.has(property)) {
+    lockedColorValues[property] = color;
+  }
+});
+```
+
+### 2. Base Color Is Derived
+
+The system tries to derive a base color from your locks:
+
+```tsx
+let palette = generateColorPalette(
+  deriveBaseColorFromLocks(lockedColorValues, harmonyMode) || randomHex(),
+  themeName === "dark",
+  lockedColorValues,  // ← Locked colors passed to generator
+  harmonyMode,
+);
+```
+
+### 3. Only Unlocked Colors Update
+
+```tsx
+Object.entries(palette).forEach(([property, color]) => {
+  if (!lockedColors.has(property)) {
+    updateThemeProperty(["colors", property], color);
+  }
+});
+```
+
+<Info>
+Locked colors are preserved exactly - they won't be nudged for contrast or adjusted in any way during shuffle.
+</Info>
+
+## Lock Behavior During Manual Edits
+
+Locks also affect automatic color derivations when you manually change colors:
+
+### Preventing Color Picker on Locked Colors
+
+```tsx
+const handleColorClick = (
+  color: string,
+  property: string,
+  button: HTMLButtonElement,
+) => {
+  if (lockedColors.has(property)) return;  // ← Locked colors can't be clicked
+  // ... open color picker
+};
+```
+
+Clicking a locked color does nothing - you must unlock it first.
+
+### Border and Muted Derivation
+
+When you change text or background, border and muted colors automatically update **unless locked**:
+
+```tsx
+const currentText =
+  selectedProperty === "text" ? newColor : theme.colors.text;
+const currentBg =
+  selectedProperty === "background" ? newColor : theme.colors.background;
+
+if (!lockedColors.has("border")) {
+  const newBorder = mixOklch(currentText, currentBg, 0.82);
+  updateThemeProperty(["colors", "border"], newBorder);
+}
+if (!lockedColors.has("muted")) {
+  const newMuted = mixOklch(currentText, currentBg, 0.55);
+  updateThemeProperty(["colors", "muted"], newMuted);
+}
+```
+
+Locking `border` or `muted` preserves their exact values.
+
+### On-Color Derivation
+
+```tsx
+const onColorMap: Record<string, string> = {
+  primary: "onPrimary",
+  container: "onContainer",
+  accent: "onAccent",
+  success: "onSuccess",
+  error: "onError",
+  warning: "onWarning",
+};
+if (onColorMap[selectedProperty]) {
+  updateThemeProperty(
+    ["colors", onColorMap[selectedProperty]],
+    pickOnColor(newColor),
+  );
+}
+```
+
+Note: On-colors are **always derived** from their parent color, regardless of locks. This ensures text remains readable on colored surfaces.
+
+<Warning>
+You cannot directly lock on-colors (onPrimary, onContainer, etc.) - they are always auto-calculated from their parent.
+</Warning>
+
+## Lock Behavior During Mode Toggle
+
+When switching between light and dark modes, locked colors are preserved:
+
+```tsx
+const toggleTheme = () => {
+  const targetIsDark = themeName !== "dark";
+  const targetMode = targetIsDark ? "dark" : "light";
+  const adapted = adaptColorsForMode(
+    theme.colors as Record<string, string>,
+    targetIsDark,
+    lockedColors  // ← Locks passed to adaptation
+  );
+  setTheme(targetMode, adapted as Partial<typeof theme.colors>);
+};
+```
+
+Inside `adaptColorsForMode`:
+
+```tsx
+for (const [role, l] of Object.entries(targetL)) {
+  if (lockedColors.has(role)) {
+    adapted[role] = currentColors[role];  // ← Keep exact value
+  } else {
+    const hue = chroma(currentColors[role]).oklch()[2] || 0;
+    adapted[role] = chroma.oklch(l, safeChroma(l, hue, vibrancyMap[role]), hue).hex();
+  }
+}
+```
+
+Locked colors maintain their exact hex values even when switching modes. This can be useful but may cause accessibility issues if the locked color doesn't have enough contrast in the new mode.
+
+<Tip>
+When locking colors for use in both light and dark modes, ensure they have sufficient contrast against both light and dark backgrounds.
+</Tip>
+
+## Smart Lock Strategies
+
+### Brand Color Preservation
+
+Lock your brand primary and shuffle to explore complementary accents:
+
+```tsx
+lockedColors = new Set(["primary"]);
+```
+
+The shuffle will derive a base color from your primary's hue, ensuring harmony.
+
+### Neutral Palette Lock
+
+Lock text, background, and container to preserve your neutral palette:
+
+```tsx
+lockedColors = new Set(["text", "background", "container"]);
+```
+
+Shuffle will only vary accent and primary colors.
+
+### Single Accent Lock
+
+Lock just the accent to explore different primary colors that complement it:
+
+```tsx
+lockedColors = new Set(["accent"]);
+```
+
+In complementary mode, the primary will be ~180° away from your accent.
+
+### State Color Lock
+
+Lock success, error, and warning if you have standard semantic colors:
+
+```tsx
+lockedColors = new Set(["success", "error", "warning"]);
+```
+
+## Lock Persistence
+
+Lock state is stored only in React component state - it is **not persisted** to localStorage or URL. This is intentional:
+
+- Locks are a workflow tool, not part of the theme
+- Shared URLs shouldn't enforce locks on recipients
+- Each session starts with all colors unlocked
+
+<Note>
+If you close the page and return, all locks will be cleared. Lock states are session-only.
+</Note>
+
+## Visual Feedback
+
+### Locked State
+
+- Lock icon always visible
+- Slightly darker border on hover (indicating interactivity)
+- Tooltip: "Unlock color"
+
+### Unlocked State
+
+- Lock icon hidden by default
+- Lock icon appears on hover with transition
+- Tooltip: "Lock color"
+
+### Disabled Interaction
+
+- Locked color buttons don't open color picker when clicked
+- Visual state remains the same (no disabled styling)
+
+## Related Features
+
+- [Smart Shuffle](/features/smart-shuffle) - How locks affect palette generation
+- [Live Preview](/features/live-preview) - See locked colors in context
+- [Export](/features/export) - Export themes with preserved locked colors

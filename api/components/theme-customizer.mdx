@@ -1,0 +1,198 @@
+---
+title: ThemeCustomizer
+description: The main theme customization interface for Theme Gen
+---
+
+The `ThemeCustomizer` component is the primary interface for customizing themes in Theme Gen. It provides interactive color buttons, lock functionality, contrast checking, and smart color generation features.
+
+## Features
+
+- Interactive color selection for key theme properties
+- Lock/unlock individual colors to preserve them during generation
+- Real-time contrast ratio checking and accessibility validation
+- Smart shuffle that generates accessible color palettes
+- Light/dark mode toggling with adaptive color adjustment
+- Undo/redo functionality
+- Export themes to various formats
+- Save and load custom themes
+- Responsive layout that adapts to viewport size
+
+## Usage
+
+```tsx
+import { ThemeCustomizer } from '@/components/ThemeCustomizer';
+
+export default function App() {
+  return (
+    <div>
+      {/* Your app content */}
+      <ThemeCustomizer />
+    </div>
+  );
+}
+```
+
+The component is designed to be rendered once in your application, typically at the root level. It renders as a fixed-position toolbar at the bottom of the screen.
+
+## Component Structure
+
+The ThemeCustomizer is a complex component with no props. It internally manages:
+
+### Color Buttons
+
+The component displays 5 primary color buttons:
+
+- **Text** - Main text color (7:1 contrast target with Background)
+- **Background** - Main background color
+- **Primary** - Primary brand color (3:1 contrast target with Background)
+- **Container** - Container/card background (4.5:1 contrast target with Text)
+- **Accent** - Accent/highlight color (3:1 contrast target with Container)
+
+Each color button shows:
+- The current color value
+- A contrast check indicator (pass/warn/fail badge)
+- A lock/unlock button for preserving the color
+- The color name label
+
+### State Management
+
+The component uses the `useTheme` hook from `ThemeContext` to access and update the global theme state.
+
+Internal state includes:
+
+```tsx
+const [lockedColors, setLockedColors] = useState<Set<string>>(new Set());
+const [harmonyMode, setHarmonyMode] = useState<HarmonyMode>('complementary');
+const [isCompact, setIsCompact] = useState(false);
+const [showExportModal, setShowExportModal] = useState(false);
+const [showSavedThemesPanel, setShowSavedThemesPanel] = useState(false);
+```
+
+Source: `src/components/ThemeCustomizer.tsx:186-190`
+
+### Automatic Color Derivation
+
+When you change certain colors, related colors update automatically:
+
+- **Border** - Derived from Text and Background (82% mix)
+- **Muted** - Derived from Text and Background (55% mix)
+- **onPrimary** - Automatic contrast color for Primary
+- **onContainer** - Automatic contrast color for Container
+- **onAccent** - Automatic contrast color for Accent
+- **onSuccess** - Automatic contrast color for Success
+- **onError** - Automatic contrast color for Error
+- **onWarning** - Automatic contrast color for Warning
+
+These derived colors can be locked to prevent automatic updates.
+
+Source: `src/components/ThemeCustomizer.tsx:230-252`
+
+### Smart Shuffle Algorithm
+
+The smart shuffle feature generates new color palettes while:
+
+1. Preserving all locked colors
+2. Using the selected harmony mode (complementary, triadic, analogous, etc.)
+3. Attempting up to 24 iterations to find an accessible palette
+4. Validating contrast ratios against WCAG targets
+
+Source: `src/components/ThemeCustomizer.tsx:267-307`
+
+### Contrast Validation
+
+The component validates these contrast pairs:
+
+| Pair | Target Ratio | Required |
+|------|--------------|----------|
+| Text on Background | 7:1 | Yes |
+| Primary on Background | 3:1 | Yes |
+| Text on Container | 4.5:1 | Yes |
+| Accent on Container | 3:1 | Yes |
+| Accent on Background | 3:1 | Yes |
+
+Source: `src/components/ThemeCustomizer.tsx:117-158`
+
+## Responsive Behavior
+
+The toolbar automatically switches between horizontal and compact (vertical) layouts based on viewport width:
+
+- **Horizontal mode** - Fixed position at bottom-center, all buttons in a row
+- **Compact mode** - Fixed position at bottom, spans full width, buttons stacked
+
+The layout detection uses `ResizeObserver` to measure toolbar width and switches modes when needed.
+
+Source: `src/components/ThemeCustomizer.tsx:336-365`
+
+## Keyboard and Mouse Interactions
+
+- **Click color button** - Opens color picker popover
+- **Click lock button** - Toggles color lock state
+- **Click outside** - Closes color picker popover
+- **Smart Shuffle button** - Generates new accessible palette
+- **Theme toggle button** - Switches between light/dark mode
+- **Export button** - Opens export modal
+- **Saved themes button** - Opens saved themes panel
+- **Undo/Redo buttons** - Navigate theme history
+
+## Related Components
+
+The ThemeCustomizer uses these child components:
+
+- [ColorPickerPopover](/api/components/color-picker) - Color selection interface
+- [ExportModal](/api/components/export-modal) - Theme export dialog
+- SavedThemesPanel - Saved themes browser
+- ToolbarButtons - Action buttons in the toolbar
+- ColorButton - Individual color selection button (internal)
+
+## Internal Types
+
+### ColorButtonData
+
+```tsx
+interface ColorButtonData {
+  color: string;          // Current hex color value
+  label: string;          // Display label
+  property: string;       // Theme property name
+  fg: 'text' | 'primary' | 'accent';  // Foreground for contrast check
+  bg: 'background' | 'container';      // Background for contrast check
+  target: number;         // Target contrast ratio
+  onColor?: string;       // Optional on-color for button text
+}
+```
+
+Source: `src/components/theme-customizer-types.ts:53-61`
+
+### ColorButtonProps
+
+```tsx
+interface ColorButtonProps {
+  color: string;
+  label: string;
+  property: string;
+  onClick: (color: string, property: string, button: HTMLButtonElement) => void;
+  isLocked: boolean;
+  onLockToggle: (property: string) => void;
+  ratio: number;
+  target: number;
+  isDarkTheme: boolean;
+  isCompact: boolean;
+  onColor?: string;
+}
+```
+
+Source: `src/components/ThemeCustomizer.tsx:26-38`
+
+## Theme Context Integration
+
+The component relies on the `ThemeContext` provider and uses these context methods:
+
+- `theme` - Current theme object
+- `updateThemeProperty` - Update a single theme property
+- `themeName` - Current theme mode ('light' or 'dark')
+- `setTheme` - Set entire theme at once
+- `undo` / `redo` - History navigation
+- `canUndo` / `canRedo` - History state
+- `pushHistory` - Save current state to history
+- `savedThemes` - Array of saved custom themes
+
+Source: `src/components/ThemeCustomizer.tsx:181`

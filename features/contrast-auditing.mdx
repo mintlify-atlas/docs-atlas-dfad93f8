@@ -1,0 +1,263 @@
+---
+title: Contrast Auditing
+description: Automatic WCAG compliance checking for accessibility
+---
+
+## Overview
+
+Theme Gen includes built-in WCAG contrast auditing to ensure your themes are accessible. The system automatically checks contrast ratios between foreground and background colors and displays visual indicators for compliance.
+
+## WCAG Standards
+
+The contrast auditor validates against these WCAG standards:
+
+- **7:1** - AAA Normal Text (highest standard)
+- **4.5:1** - AA Normal Text (minimum for body text)
+- **3:1** - AA Large Text / UI Components (minimum for UI elements)
+
+### Contrast Ratio Calculation
+
+Theme Gen uses the official WCAG 2.1 relative luminance formula:
+
+```tsx
+function relativeLuminance(color: string): number {
+  const { r, g, b } = hexToRgb(color);
+  const rLin = channelToLinear(r);
+  const gLin = channelToLinear(g);
+  const bLin = channelToLinear(b);
+
+  return 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin;
+}
+
+export function getContrastRatio(foreground: string, background: string): number {
+  const l1 = relativeLuminance(foreground);
+  const l2 = relativeLuminance(background);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+
+  return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(2));
+}
+```
+
+This ensures accurate, standards-compliant contrast measurements.
+
+## Audited Color Pairs
+
+Theme Gen automatically audits these critical color combinations:
+
+### Required Audits
+
+```tsx
+const contrastAuditDefinitions = [
+  {
+    id: "text/background",
+    label: "Text on Background",
+    foreground: "text",
+    background: "background",
+    min: 7,
+    required: true,
+  },
+  {
+    id: "primary/background",
+    label: "Primary on Background",
+    foreground: "primary",
+    background: "background",
+    min: 3,
+    required: true,
+  },
+  {
+    id: "text/container",
+    label: "Text on Container",
+    foreground: "text",
+    background: "container",
+    min: 4.5,
+    required: true,
+  },
+  {
+    id: "accent/container",
+    label: "Accent on Container",
+    foreground: "accent",
+    background: "container",
+    min: 3,
+    required: true,
+  },
+  {
+    id: "accent/background",
+    label: "Accent on Background",
+    foreground: "accent",
+    background: "background",
+    min: 3,
+    required: true,
+  },
+];
+```
+
+<Info>
+All five audit pairs must pass their minimum ratios for the theme to be considered fully accessible.
+</Info>
+
+## Visual Indicators
+
+Each color button displays a badge showing its contrast status:
+
+### Badge States
+
+```tsx
+function getBadgeStage(ratio: number, target: number): BadgeStage {
+  if (ratio >= target * 1.5) return "pass";  // Exceeds target by 50%
+  if (ratio >= target) return "warn";        // Meets minimum
+  return "fail";                             // Below minimum
+}
+```
+
+- **Pass (✓)** - Green check, exceeds target by 50% or more
+- **Warn (✓)** - Yellow check, meets minimum but not by much
+- **Fail (✗)** - Red X, below minimum standard
+
+### Badge Display
+
+The badge appears on the top-left of each color button:
+
+```tsx
+<div
+  className="absolute -top-2 -left-2 z-10 p-1 rounded-full border shadow-sm"
+  title={
+    stage === "fail"
+      ? `Below ${target}:1 target (${ratio}:1)`
+      : `Passes ${target}:1 target (${ratio}:1)`
+  }
+>
+  {stage === "pass" || stage === "warn" ? (
+    <Check size={9} strokeWidth={3.25} />
+  ) : (
+    <X size={9} strokeWidth={3.25} />
+  )}
+</div>
+```
+
+Hover over any badge to see the exact contrast ratio.
+
+<Tip>
+The toolbar displays a summary showing how many required audits are passing (e.g., "5/5 passing").
+</Tip>
+
+## Automatic Contrast Correction
+
+During palette generation, Theme Gen automatically nudges colors to meet minimum contrast requirements:
+
+### Nudge Algorithm
+
+```tsx
+function nudgeForContrastOklch(
+  color: string,
+  against: string,
+  minimumRatio: number
+): string {
+  const [l, c, h] = chroma(color).oklch();
+  const againstLuminance = chroma(against).luminance();
+  const direction = againstLuminance > 0.5 ? -0.03 : 0.03;
+
+  let currentL = l;
+  for (let step = 0; step < 25; step += 1) {
+    const candidate = chroma.oklch(
+      Math.max(0, Math.min(1, currentL)),
+      c,
+      h
+    );
+    if (getContrastRatio(candidate.hex(), against) >= minimumRatio) {
+      return candidate.hex();
+    }
+    currentL += direction;
+  }
+
+  return chroma.oklch(Math.max(0, Math.min(1, currentL)), c, h).hex();
+}
+```
+
+This function:
+1. Preserves the color's hue and chroma
+2. Adjusts only the lightness (L) in OKLCH space
+3. Iterates until the minimum contrast is achieved
+4. Moves darker against light backgrounds, lighter against dark
+
+### Applied to Generated Colors
+
+```tsx
+primary = nudgeForContrastOklch(primary, background, 3);
+accent = nudgeForContrastOklch(accent, background, 3);
+const finalText = nudgeForContrastOklch(text, background, 7);
+```
+
+<Note>
+The nudge algorithm uses OKLCH color space for perceptually uniform adjustments that maintain color character.
+</Note>
+
+## Smart Shuffle Integration
+
+When using the Smart Shuffle feature, Theme Gen attempts to generate accessible palettes:
+
+```tsx
+for (
+  let index = 0;
+  index < 24 && !isPaletteAccessible(palette);
+  index += 1
+) {
+  palette = generateColorPalette(
+    deriveBaseColorFromLocks(lockedColorValues, harmonyMode) || randomHex(),
+    themeName === "dark",
+    lockedColorValues,
+    harmonyMode,
+  );
+}
+```
+
+The system will try up to 24 times to generate a palette that passes all required contrast audits.
+
+```tsx
+function isPaletteAccessible(palette: Record<string, string>) {
+  return getContrastAudit(palette)
+    .filter((item) => item.required)
+    .every((item) => item.pass);
+}
+```
+
+## WCAG Result Object
+
+For programmatic access, use the `getWCAGContrastResult` function:
+
+```tsx
+export function getWCAGContrastResult(
+  foreground: string,
+  background: string
+): WCAGContrastResult {
+  const ratio = getContrastRatio(foreground, background);
+
+  return {
+    ratio,
+    aaNormal: ratio >= 4.5,    // AA for normal text
+    aaLarge: ratio >= 3,        // AA for large text
+    aaaNormal: ratio >= 7,      // AAA for normal text
+    aaaLarge: ratio >= 4.5,     // AAA for large text
+  };
+}
+```
+
+This provides boolean flags for all WCAG conformance levels.
+
+## Best Practices
+
+- Aim for **7:1** ratio for body text (AAA standard)
+- Minimum **4.5:1** for all text content (AA standard)
+- Minimum **3:1** for UI components and large text
+- Check badges on all color buttons before exporting
+- Ensure toolbar shows "5/5 passing" for full accessibility
+
+<Warning>
+If any required audit fails, your theme may not meet WCAG 2.1 AA standards and could have accessibility issues.
+</Warning>
+
+## Related Features
+
+- [Smart Shuffle](/features/smart-shuffle) - Generates accessible palettes automatically
+- [Live Preview](/features/live-preview) - See contrast changes in real-time
+- [Color Locking](/features/color-locking) - Lock accessible colors during generation

@@ -1,0 +1,766 @@
+---
+title: Exporting Themes
+description: Export your themes in multiple formats and color spaces for any framework
+icon: 'download'
+---
+
+## Export Modal
+
+Click the **Download** button in the toolbar to open the export modal. The modal provides extensive customization options for exporting your theme.
+
+## Export Formats
+
+Theme Gen supports exporting to five different formats, each optimized for specific use cases:
+
+<Tabs>
+  <Tab title="CSS Variables">
+    Standard CSS custom properties that work with any framework.
+
+    **Use Case:** Vanilla CSS, any framework, or as a foundation for other formats
+
+    **Light Mode Only:**
+    ```css
+    :root {
+      --color-text: #2d2d2d;
+      --color-background: #fcfcfc;
+      --color-primary: #3b82f6;
+      --color-container: #f0f0f0;
+      --color-accent: #8b5cf6;
+      --color-success: #10b981;
+      --color-error: #ef4444;
+      --color-warning: #f59e0b;
+      --color-onPrimary: #ffffff;
+      --color-onContainer: #1a1a1a;
+      --color-onAccent: #ffffff;
+      --color-onSuccess: #ffffff;
+      --color-onError: #ffffff;
+      --color-onWarning: #1a1a1a;
+      --color-border: #d4d4d4;
+      --color-muted: #737373;
+      --color-ring: #3b82f6;
+    }
+    ```
+
+    **Both Modes:**
+    ```css
+    :root {
+      --color-text: #2d2d2d;
+      --color-background: #fcfcfc;
+      /* ... light mode colors ... */
+    }
+
+    .dark {
+      --color-text: #ededed;
+      --color-background: #1a1a1a;
+      /* ... dark mode colors ... */
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text: #ededed;
+        --color-background: #1a1a1a;
+        /* ... dark mode colors ... */
+      }
+    }
+    ```
+
+    <Note>
+      The "both" option includes a `.dark` class selector and a media query for automatic system theme detection.
+    </Note>
+  </Tab>
+
+  <Tab title="Tailwind CSS">
+    Tailwind configuration with support for both v3 and v4.
+
+    ### Tailwind v3.4
+
+    **Use Case:** Tailwind CSS v3 projects with `tailwind.config.js`
+
+    **Light Mode Only:**
+    ```javascript
+    // tailwind.config.js
+    module.exports = {
+      theme: {
+        extend: {
+          colors: {
+            text: '#2d2d2d',
+            background: '#fcfcfc',
+            primary: '#3b82f6',
+            container: '#f0f0f0',
+            accent: '#8b5cf6',
+            success: '#10b981',
+            error: '#ef4444',
+            warning: '#f59e0b',
+            onPrimary: '#ffffff',
+            onContainer: '#1a1a1a',
+            onAccent: '#ffffff',
+            onSuccess: '#ffffff',
+            onError: '#ffffff',
+            onWarning: '#1a1a1a',
+            border: '#d4d4d4',
+            muted: '#737373',
+            ring: '#3b82f6',
+          }
+        }
+      }
+    }
+    ```
+
+    **Both Modes:**
+    ```javascript
+    // tailwind.config.js
+    module.exports = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            text: '#2d2d2d',
+            background: '#fcfcfc',
+            // ... light mode colors ...
+          }
+        }
+      }
+    }
+
+    /* Add to your global CSS: */
+    :root {
+      --color-text: #2d2d2d;
+      --color-background: #fcfcfc;
+      /* ... light mode ... */
+    }
+
+    .dark {
+      --color-text: #ededed;
+      --color-background: #1a1a1a;
+      /* ... dark mode ... */
+    }
+    ```
+
+    ### Tailwind v4.2
+
+    **Use Case:** New Tailwind CSS v4 projects with `@theme` directive
+
+    **Light Mode Only:**
+    ```css
+    @import "tailwindcss";
+
+    @theme {
+      --color-text: #2d2d2d;
+      --color-background: #fcfcfc;
+      --color-primary: #3b82f6;
+      /* ... */
+    }
+    ```
+
+    **Both Modes:**
+    ```css
+    @import "tailwindcss";
+
+    @theme {
+      --color-text: #2d2d2d;
+      --color-background: #fcfcfc;
+      /* ... light mode ... */
+    }
+
+    @variant dark {
+      @theme {
+        --color-text: #ededed;
+        --color-background: #1a1a1a;
+        /* ... dark mode ... */
+      }
+    }
+    ```
+
+    <Info>
+      Tailwind v4's `@theme` directive provides a cleaner, more powerful way to define design tokens. Use the version toggle in the export modal to switch between v3 and v4 formats.
+    </Info>
+  </Tab>
+
+  <Tab title="SCSS">
+    Sass variables and maps for preprocessing workflows.
+
+    **Use Case:** Projects using Sass/SCSS for styling
+
+    **Light Mode Only:**
+    ```scss
+    $color-text: #2d2d2d;
+    $color-background: #fcfcfc;
+    $color-primary: #3b82f6;
+    $color-container: #f0f0f0;
+    $color-accent: #8b5cf6;
+    $color-success: #10b981;
+    $color-error: #ef4444;
+    $color-warning: #f59e0b;
+    $color-onPrimary: #ffffff;
+    $color-onContainer: #1a1a1a;
+    $color-onAccent: #ffffff;
+    $color-onSuccess: #ffffff;
+    $color-onError: #ffffff;
+    $color-onWarning: #1a1a1a;
+    $color-border: #d4d4d4;
+    $color-muted: #737373;
+    $color-ring: #3b82f6;
+
+    $colors: (
+      "text": #2d2d2d,
+      "background": #fcfcfc,
+      "primary": #3b82f6,
+      /* ... */
+    );
+    ```
+
+    **Both Modes:**
+    ```scss
+    // Light theme
+    $light-text: #2d2d2d;
+    $light-background: #fcfcfc;
+    /* ... */
+
+    $light-colors: (
+      "text": #2d2d2d,
+      "background": #fcfcfc,
+      /* ... */
+    );
+
+    // Dark theme
+    $dark-text: #ededed;
+    $dark-background: #1a1a1a;
+    /* ... */
+
+    $dark-colors: (
+      "text": #ededed,
+      "background": #1a1a1a,
+      /* ... */
+    );
+    ```
+
+    <Accordion title="Using SCSS Maps">
+      The map format is useful for iterating over colors:
+
+      ```scss
+      @each $name, $color in $colors {
+        .bg-#{$name} {
+          background-color: $color;
+        }
+        .text-#{$name} {
+          color: $color;
+        }
+      }
+      ```
+
+      This generates utility classes for all your theme colors.
+    </Accordion>
+  </Tab>
+
+  <Tab title="SwiftUI">
+    Swift color extensions for iOS, iPadOS, macOS, watchOS, and visionOS apps.
+
+    **Use Case:** SwiftUI applications (iOS 13+, macOS 10.15+)
+
+    **Light Mode Only:**
+    ```swift
+    import SwiftUI
+
+    struct Theme {
+        static let text = Color(hex: "#2d2d2d")
+        static let background = Color(hex: "#fcfcfc")
+        static let primary = Color(hex: "#3b82f6")
+        static let container = Color(hex: "#f0f0f0")
+        static let accent = Color(hex: "#8b5cf6")
+        static let success = Color(hex: "#10b981")
+        static let error = Color(hex: "#ef4444")
+        static let warning = Color(hex: "#f59e0b")
+        static let onPrimary = Color(hex: "#ffffff")
+        static let onContainer = Color(hex: "#1a1a1a")
+        static let onAccent = Color(hex: "#ffffff")
+        static let onSuccess = Color(hex: "#ffffff")
+        static let onError = Color(hex: "#ffffff")
+        static let onWarning = Color(hex: "#1a1a1a")
+        static let border = Color(hex: "#d4d4d4")
+        static let muted = Color(hex: "#737373")
+        static let ring = Color(hex: "#3b82f6")
+    }
+
+    // Color hex initializer
+    extension Color {
+        init(hex: String) {
+            let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+            var int: UInt64 = 0
+            Scanner(string: hex).scanHexInt64(&int)
+            let a, r, g, b: UInt64
+            switch hex.count {
+            case 6:
+                (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+            default:
+                (a, r, g, b) = (255, 0, 0, 0)
+            }
+            self.init(
+                .sRGB,
+                red: Double(r) / 255,
+                green: Double(g) / 255,
+                blue: Double(b) / 255,
+                opacity: Double(a) / 255
+            )
+        }
+    }
+    ```
+
+    **Both Modes:**
+    ```swift
+    import SwiftUI
+
+    struct AppColors {
+        let text: Color
+        let background: Color
+        let primary: Color
+        /* ... */
+    }
+
+    extension AppColors {
+        static let light = AppColors(
+            text: Color(hex: "#2d2d2d"),
+            background: Color(hex: "#fcfcfc"),
+            primary: Color(hex: "#3b82f6"),
+            /* ... */
+        )
+
+        static let dark = AppColors(
+            text: Color(hex: "#ededed"),
+            background: Color(hex: "#1a1a1a"),
+            primary: Color(hex: "#6b9eff"),
+            /* ... */
+        )
+    }
+    ```
+
+    <Accordion title="Using with ColorScheme">
+      Automatically switch themes based on system appearance:
+
+      ```swift
+      struct ContentView: View {
+          @Environment(\.colorScheme) var colorScheme
+          
+          var colors: AppColors {
+              colorScheme == .dark ? .dark : .light
+          }
+          
+          var body: some View {
+              VStack {
+                  Text("Hello, World!")
+                      .foregroundColor(colors.text)
+              }
+              .background(colors.background)
+          }
+      }
+      ```
+    </Accordion>
+  </Tab>
+
+  <Tab title="React Native">
+    TypeScript color constants for React Native projects.
+
+    **Use Case:** React Native mobile applications
+
+    **Light Mode Only:**
+    ```typescript
+    // theme.ts
+    export const colors = {
+      text: '#2d2d2d',
+      background: '#fcfcfc',
+      primary: '#3b82f6',
+      container: '#f0f0f0',
+      accent: '#8b5cf6',
+      success: '#10b981',
+      error: '#ef4444',
+      warning: '#f59e0b',
+      onPrimary: '#ffffff',
+      onContainer: '#1a1a1a',
+      onAccent: '#ffffff',
+      onSuccess: '#ffffff',
+      onError: '#ffffff',
+      onWarning: '#1a1a1a',
+      border: '#d4d4d4',
+      muted: '#737373',
+      ring: '#3b82f6',
+    } as const;
+
+    export type ColorName = keyof typeof colors;
+    ```
+
+    **Both Modes:**
+    ```typescript
+    // theme.ts
+    export const lightColors = {
+      text: '#2d2d2d',
+      background: '#fcfcfc',
+      /* ... */
+    } as const;
+
+    export const darkColors = {
+      text: '#ededed',
+      background: '#1a1a1a',
+      /* ... */
+    } as const;
+
+    export type ColorName = keyof typeof lightColors;
+
+    // Usage:
+    // import { useColorScheme } from 'react-native';
+    // const colors = useColorScheme() === 'dark' ? darkColors : lightColors;
+    ```
+
+    <Accordion title="Creating a Theme Hook">
+      Simplify theme access with a custom hook:
+
+      ```typescript
+      import { useColorScheme } from 'react-native';
+      import { lightColors, darkColors } from './theme';
+
+      export function useTheme() {
+        const colorScheme = useColorScheme();
+        const colors = colorScheme === 'dark' ? darkColors : lightColors;
+        
+        return { colors, colorScheme };
+      }
+
+      // Usage in components
+      function MyComponent() {
+        const { colors } = useTheme();
+        
+        return (
+          <View style={{ backgroundColor: colors.background }}>
+            <Text style={{ color: colors.text }}>
+              Hello, World!
+            </Text>
+          </View>
+        );
+      }
+      ```
+    </Accordion>
+
+    <Note>
+      React Native doesn't support OKLCH color format. When exporting with OKLCH format selected, Theme Gen automatically falls back to RGB format for React Native.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Color Formats
+
+Choose how colors are represented in your exported code:
+
+<Tabs>
+  <Tab title="HEX">
+    **Hexadecimal color codes** - The most common format
+
+    ```css
+    --color-primary: #3b82f6;
+    ```
+
+    - ✓ Universal browser support
+    - ✓ Compact representation
+    - ✓ Easy to copy/paste
+    - ✗ Not human-readable
+    - ✗ Can't adjust individual channels in CSS
+  </Tab>
+
+  <Tab title="RGB">
+    **Red, Green, Blue** - Widely supported
+
+    ```css
+    --color-primary: rgb(59, 130, 246);
+    ```
+
+    - ✓ Universal browser support
+    - ✓ Can add alpha channel: `rgba(59, 130, 246, 0.5)`
+    - ✓ Human-readable values (0-255)
+    - ✗ Not perceptually uniform
+    - ✗ Harder to adjust hue/saturation
+  </Tab>
+
+  <Tab title="HSL">
+    **Hue, Saturation, Lightness** - Intuitive for designers
+
+    ```css
+    --color-primary: hsl(217, 91%, 60%);
+    ```
+
+    - ✓ Universal browser support
+    - ✓ Easy to create variations: `hsl(217, 91%, 70%)` is lighter
+    - ✓ Can add alpha: `hsla(217, 91%, 60%, 0.5)`
+    - ✓ Hue is circular (0-360°)
+    - ✗ Not perceptually uniform
+
+    <Info>
+      HSL is great for programmatic color manipulation. Adjusting lightness by 10% produces predictable results.
+    </Info>
+  </Tab>
+
+  <Tab title="OKLCH">
+    **Perceptually uniform color space** - Modern and precise
+
+    ```css
+    --color-primary: oklch(60% 0.15 250);
+    ```
+
+    - ✓ Perceptually uniform (equal changes = equal perceived difference)
+    - ✓ Wider gamut support (P3, Rec2020)
+    - ✓ Better gradients and color manipulation
+    - ✓ Lightness matches human perception
+    - ✗ Requires recent browser versions (Chrome 111+, Safari 16.4+, Firefox 113+)
+    - ✗ Not supported in React Native
+
+    <Note>
+      OKLCH is the color space Theme Gen uses internally. It provides the most accurate color manipulation and is recommended for modern web projects.
+    </Note>
+
+    **Browser Support:**
+    - Chrome/Edge 111+ (March 2023)
+    - Safari 16.4+ (March 2023)
+    - Firefox 113+ (May 2023)
+  </Tab>
+</Tabs>
+
+## Mode Options
+
+Control which theme modes to include in your export:
+
+<Steps>
+  <Step title="Light Mode Only">
+    Exports only the light theme colors. Use this when:
+    - Your application doesn't support dark mode
+    - You're exporting a specific light theme variant
+    - Building a design system with separate files per mode
+  </Step>
+
+  <Step title="Dark Mode Only">
+    Exports only the dark theme colors. Use this when:
+    - Your application only uses dark mode
+    - You're exporting a specific dark theme variant
+    - Building a design system with separate files per mode
+  </Step>
+
+  <Step title="Both Modes">
+    Exports both light and dark themes. The format depends on your export format:
+    
+    - **CSS Variables**: Includes `.dark` class and media query
+    - **Tailwind v3**: Config + CSS variables for both modes
+    - **Tailwind v4**: `@variant dark` with nested `@theme`
+    - **SCSS**: Separate variable prefixes (`$light-*` and `$dark-*`)
+    - **SwiftUI**: Struct with `.light` and `.dark` static properties
+    - **React Native**: Separate `lightColors` and `darkColors` exports
+
+    <Info>
+      The "both" option is recommended for most projects. It ensures your theme works in both light and dark modes with proper system integration.
+    </Info>
+  </Step>
+</Steps>
+
+## Copying to Clipboard
+
+Click the **Copy** button in the top-right corner of the code preview to copy the generated code to your clipboard. The button shows a checkmark for 2 seconds to confirm the copy succeeded.
+
+```typescript
+// From ExportModal.tsx
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(generateExportCode());
+    dispatch({ type: 'SET_COPIED', payload: true });
+    setTimeout(() => dispatch({ type: 'SET_COPIED', payload: false }), 2000);
+  } catch (err) {
+    console.error("Failed to copy: ", err);
+  }
+};
+```
+
+## Usage Examples
+
+<AccordionGroup>
+  <Accordion title="Next.js with CSS Variables">
+    1. Export as **CSS Variables** in **Both Modes**
+    2. Create `app/globals.css`:
+
+    ```css
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    :root {
+      /* Paste light mode variables */
+    }
+
+    .dark {
+      /* Paste dark mode variables */
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        /* Paste dark mode variables again */
+      }
+    }
+    ```
+
+    3. Use in components:
+
+    ```tsx
+    <div className="bg-[var(--color-background)] text-[var(--color-text)]">
+      <button className="bg-[var(--color-primary)] text-[var(--color-onPrimary)]">
+        Click me
+      </button>
+    </div>
+    ```
+  </Accordion>
+
+  <Accordion title="Tailwind CSS v3 Project">
+    1. Export as **Tailwind** (v3) in **Both Modes**
+    2. Paste the config into `tailwind.config.js`
+    3. Add the CSS variables to your global stylesheet
+    4. Use Tailwind classes:
+
+    ```tsx
+    <div className="bg-background text-text">
+      <button className="bg-primary text-onPrimary">
+        Click me
+      </button>
+      <div className="bg-container text-text border border-border">
+        Card content
+      </div>
+    </div>
+    ```
+
+    5. For dark mode, add the `dark:` prefix:
+
+    ```tsx
+    <button className="bg-primary dark:bg-primary hover:opacity-90">
+      Hover me
+    </button>
+    ```
+  </Accordion>
+
+  <Accordion title="React Native App">
+    1. Export as **React Native** in **Both Modes** with **RGB** format
+    2. Create `theme.ts` and paste the exported code
+    3. Create a theme hook:
+
+    ```typescript
+    import { useColorScheme } from 'react-native';
+    import { lightColors, darkColors } from './theme';
+
+    export function useTheme() {
+      const colorScheme = useColorScheme();
+      return colorScheme === 'dark' ? darkColors : lightColors;
+    }
+    ```
+
+    4. Use in components:
+
+    ```tsx
+    import { useTheme } from './hooks/useTheme';
+
+    function MyScreen() {
+      const colors = useTheme();
+      
+      return (
+        <View style={{ backgroundColor: colors.background }}>
+          <Text style={{ color: colors.text }}>Hello!</Text>
+          <TouchableOpacity
+            style={{ backgroundColor: colors.primary }}
+          >
+            <Text style={{ color: colors.onPrimary }}>Press me</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="SwiftUI iOS App">
+    1. Export as **SwiftUI** in **Both Modes** with **HEX** format
+    2. Create `Theme.swift` and paste the exported code
+    3. Use in views:
+
+    ```swift
+    import SwiftUI
+
+    struct ContentView: View {
+        @Environment(\.colorScheme) var colorScheme
+        
+        var colors: AppColors {
+            colorScheme == .dark ? .dark : .light
+        }
+        
+        var body: some View {
+            VStack(spacing: 16) {
+                Text("Welcome")
+                    .foregroundColor(colors.text)
+                
+                Button(action: { }) {
+                    Text("Click me")
+                        .foregroundColor(colors.onPrimary)
+                        .padding()
+                        .background(colors.primary)
+                        .cornerRadius(8)
+                }
+            }
+            .padding()
+            .background(colors.background)
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Tips
+
+<Note>
+  **Export both modes even if you only support one**
+  
+  This future-proofs your theme. If you decide to add dark mode later, you'll already have a well-matched palette.
+</Note>
+
+<Info>
+  **Choose the right color format for your stack:**
+  - Web projects: OKLCH (modern) or HSL (universal)
+  - CSS-in-JS: RGB or HEX
+  - React Native: RGB (OKLCH not supported)
+  - Sass/Less: HEX or RGB
+  - Design tools: HEX
+</Info>
+
+<Accordion title="Version Control Tips">
+  Store your exported theme in version control:
+
+  ```bash
+  src/
+    styles/
+      theme.css          # Exported CSS variables
+      colors.scss        # Exported SCSS
+    config/
+      tailwind.config.js # Exported Tailwind config
+  ```
+
+  Commit theme changes with clear messages:
+  ```bash
+  git commit -m "feat: update theme colors for better contrast"
+  ```
+
+  Consider storing the Theme Gen URL in your README so team members can modify the theme:
+  ```markdown
+  ## Theme
+  
+  Edit theme: https://themegen.com/?colors=2d2d2d-fcfcfc-3b82f6-f0f0f0-8b5cf6&mode=light
+  ```
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Sharing Themes" icon="share-nodes" href="/guides/sharing">
+    Learn how to share and save your themes
+  </Card>
+  <Card title="Creating Themes" icon="palette" href="/guides/creating-themes">
+    Learn the theme creation workflow
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/theme-context">
+    Integrate Theme Gen into your build process
+  </Card>
+</CardGroup>

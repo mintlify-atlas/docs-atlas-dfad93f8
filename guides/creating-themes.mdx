@@ -1,0 +1,268 @@
+---
+title: Creating Themes
+description: Step-by-step guide to creating beautiful, accessible themes with Theme Gen
+icon: 'palette'
+---
+
+## Introduction
+
+Theme Gen provides an intuitive workflow for creating accessible color themes. This guide walks you through the complete process of creating a theme from scratch.
+
+## Theme Creation Workflow
+
+<Steps>
+  <Step title="Start with a Base Color">
+    Begin by clicking on any of the five main color buttons in the toolbar:
+    
+    - **Text** - Primary text color (requires 7:1 contrast with background)
+    - **Background** - Main background color
+    - **Primary** - Primary action/brand color (requires 3:1 contrast with background)
+    - **Container** - Container/card background color
+    - **Accent** - Secondary accent color (requires 3:1 contrast with container and background)
+
+    When you click a color button, a color picker opens where you can:
+    - Drag the gradient selector to choose hue and saturation
+    - Adjust the lightness slider
+    - Enter hex values directly
+    - View real-time contrast ratios
+  </Step>
+
+  <Step title="Adjust Colors with Visual Feedback">
+    As you modify colors, Theme Gen provides instant visual feedback:
+
+    **Contrast Indicators**
+    Each color button displays a badge showing whether it meets accessibility requirements:
+    - ✓ (checkmark) - Passes the required contrast ratio
+    - ✗ (cross) - Below the required contrast ratio
+
+    Hover over the badge to see the exact contrast ratio and target.
+
+    **Live Preview**
+    The preview components update in real-time, allowing you to see how your theme looks across different UI patterns like cards, buttons, forms, and charts.
+  </Step>
+
+  <Step title="Lock Colors You Want to Keep">
+    While experimenting with themes, you can lock specific colors to preserve them:
+
+    - Hover over any color button
+    - Click the lock icon in the top-right corner
+    - Locked colors won't change when using Smart Shuffle or toggling modes
+
+    This is especially useful when:
+    - You have brand colors that must remain consistent
+    - You've found the perfect accent color
+    - Building variations of an existing theme
+  </Step>
+
+  <Step title="Use Smart Shuffle for Inspiration">
+    The Smart Shuffle feature generates accessible color palettes automatically:
+
+    ```typescript
+    // Smart Shuffle intelligently respects locked colors
+    const smartShuffle = () => {
+      // Collect all locked colors
+      const lockedColorValues: Record<string, string> = {};
+      Object.entries(theme.colors).forEach(([property, color]) => {
+        if (lockedColors.has(property)) {
+          lockedColorValues[property] = color;
+        }
+      });
+
+      // Generate palette with locked colors preserved
+      let palette = generateColorPalette(
+        deriveBaseColorFromLocks(lockedColorValues, harmonyMode) || randomHex(),
+        themeName === "dark",
+        lockedColorValues,
+        harmonyMode,
+      );
+
+      // Retry up to 24 times until accessibility requirements are met
+      for (let index = 0; index < 24 && !isPaletteAccessible(palette); index += 1) {
+        palette = generateColorPalette(
+          deriveBaseColorFromLocks(lockedColorValues, harmonyMode) || randomHex(),
+          themeName === "dark",
+          lockedColorValues,
+          harmonyMode,
+        );
+      }
+    };
+    ```
+
+    **Harmony Modes**
+    Click the dropdown arrow next to the shuffle button to choose a color harmony:
+    - **Complementary** - Uses colors opposite on the color wheel for high contrast
+    - **Monochromatic** - Uses variations of the same hue for subtle, cohesive themes
+  </Step>
+
+  <Step title="Toggle Between Light and Dark Modes">
+    Create both light and dark variants with one click:
+
+    - Click the sun/moon icon in the toolbar
+    - Theme Gen automatically adapts your colors for the opposite mode
+    - Locked colors are preserved during mode switching
+    - Each mode maintains proper contrast ratios
+
+    ```typescript
+    // Automatic mode adaptation
+    const adaptColorsForMode = (
+      currentColors: Record<string, string>,
+      targetIsDark: boolean,
+      lockedColors: Set<string>
+    ) => {
+      const targetL: Record<string, number> = {
+        text:       targetIsDark ? 0.93  : 0.18,
+        background: targetIsDark ? 0.16  : 0.985,
+        primary:    targetIsDark ? 0.65  : 0.55,
+        container:  targetIsDark ? 0.25  : 0.94,
+        accent:     targetIsDark ? 0.68  : 0.58,
+      };
+      // ... adaptation logic
+    };
+    ```
+  </Step>
+
+  <Step title="Undo/Redo Changes">
+    Theme Gen tracks up to 15 history steps:
+
+    - **Undo** - Ctrl+Z (Cmd+Z on Mac)
+    - **Redo** - Ctrl+Shift+Z or Ctrl+Y (Cmd+Shift+Z or Cmd+Y on Mac)
+
+    History is automatically saved before:
+    - Opening the color picker
+    - Using Smart Shuffle
+    - Toggling light/dark mode
+  </Step>
+</Steps>
+
+## Color Derivation
+
+<Accordion title="How Derived Colors Work">
+  Theme Gen automatically calculates several derived colors to maintain consistency:
+
+  **Border and Muted Colors**
+  These are calculated by mixing text and background colors in OKLCH color space:
+
+  ```typescript
+  // From colorUtils.ts
+  const border = mixOklch(text, background, 0.82);  // 82% toward background
+  const muted = mixOklch(text, background, 0.55);   // 55% toward background
+  ```
+
+  **On-Colors** (Text colors for colored backgrounds)
+  Automatically determined to ensure 4.5:1 contrast:
+
+  ```typescript
+  export function pickOnColor(bg: string): string {
+    const [, , h] = chroma(bg).oklch();
+    const hue = isNaN(h) ? 0 : h;
+
+    // Determine direction based on contrast
+    const whiteContrast = getContrastRatio("#ffffff", bg);
+    const blackContrast = getContrastRatio("#000000", bg);
+    const goLight = whiteContrast >= blackContrast;
+
+    // Walk from extreme toward middle until 4.5:1 contrast is met
+    let l = goLight ? 0.97 : 0.06;
+    const step = goLight ? -0.02 : 0.02;
+
+    for (let i = 0; i < 30; i++) {
+      const c = safeChroma(l, hue, 0.25);
+      const candidate = chroma.oklch(l, c, hue).hex();
+      if (getContrastRatio(candidate, bg) >= 4.5) return candidate;
+      l += step;
+    }
+
+    return goLight ? "#ffffff" : "#000000";
+  }
+  ```
+
+  This ensures that text on primary buttons, accent badges, and colored containers is always readable.
+</Accordion>
+
+<Accordion title="State Colors (Success, Error, Warning)">
+  State colors use fixed hues but match the lightness of your primary color:
+
+  - **Success** - Hue 155° (green)
+  - **Error** - Hue 25° (red/orange)
+  - **Warning** - Hue 70° (yellow)
+
+  ```typescript
+  // From generateColorPalette in colorUtils.ts
+  const successHue = 155;
+  const errorHue = 25;
+  const warningHue = 70;
+
+  let success = chroma.oklch(
+    primaryL, 
+    safeChroma(primaryL, successHue, 0.75), 
+    successHue
+  ).hex();
+
+  // Nudge for 3:1 contrast with background
+  success = nudgeForContrastOklch(success, background, 3);
+  ```
+
+  This keeps state colors consistent across themes while ensuring they're accessible.
+</Accordion>
+
+## Tips for Great Themes
+
+<Note>
+  **Use the Preview Components**
+  
+  Scroll through the page to see how your theme looks in:
+  - Hero sections with large text
+  - Cards and containers
+  - Form inputs and buttons
+  - Data visualizations
+  - Mobile app interfaces
+</Note>
+
+<Info>
+  **Brand Color Integration**
+  
+  If you have existing brand colors:
+  1. Set your primary or accent to your brand color
+  2. Lock that color
+  3. Use Smart Shuffle to generate complementary colors
+  4. The algorithm will derive palettes that work with your brand
+</Info>
+
+<Accordion title="Common Workflows">
+  **Starting from Scratch**
+  1. Click Smart Shuffle a few times to find an interesting palette
+  2. Lock colors you like
+  3. Manually adjust the ones you don't
+  4. Toggle to dark mode and repeat
+
+  **Adapting Brand Colors**
+  1. Click Primary and enter your brand color
+  2. Lock the primary color
+  3. Use Smart Shuffle with Complementary harmony
+  4. Adjust background and text to your preference
+
+  **Creating Variations**
+  1. Start with an existing theme
+  2. Lock most colors
+  3. Change one or two unlocked colors
+  4. Use Smart Shuffle with Monochromatic harmony
+</Accordion>
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Z` / `Cmd+Z` | Undo last change |
+| `Ctrl+Shift+Z` / `Cmd+Shift+Z` | Redo change |
+| `Ctrl+Y` / `Cmd+Y` | Redo change (alternative) |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Understanding Accessibility" icon="universal-access" href="/guides/accessibility">
+    Learn about WCAG standards and contrast requirements
+  </Card>
+  <Card title="Exporting Themes" icon="download" href="/guides/exporting">
+    Export your theme in multiple formats for your project
+  </Card>
+</CardGroup>

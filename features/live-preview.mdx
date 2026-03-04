@@ -1,0 +1,148 @@
+---
+title: Live Preview
+description: Real-time theme visualization with instant updates
+---
+
+## Overview
+
+Theme Gen provides a live preview system that instantly reflects all color changes across your theme in real-time. Every color adjustment, shuffle, or theme mode toggle is immediately visible, allowing you to see exactly how your theme will look before exporting.
+
+## How It Works
+
+The live preview system uses CSS custom properties (CSS variables) to dynamically update colors across the entire interface. When you modify any color in the theme customizer, the system:
+
+1. Updates the theme state in React context
+2. Syncs CSS variables to the DOM root element
+3. Reflects changes instantly across all UI components
+
+### CSS Variable System
+
+All theme colors are exposed as CSS variables on the `:root` element:
+
+```css
+:root {
+  --color-text: #1a1a1a;
+  --color-background: #ffffff;
+  --color-primary: #3b82f6;
+  --color-container: #f5f5f5;
+  --color-accent: #8b5cf6;
+  /* ... and more */
+}
+```
+
+These variables are automatically updated whenever you make changes in the customizer.
+
+### Implementation Details
+
+The live preview is powered by the `updateCSSVariables` function in `ThemeContext.tsx`:
+
+```tsx
+function updateCSSVariables(newTheme: Theme) {
+  const root = document.documentElement;
+  Object.entries(newTheme.colors).forEach(([key, value]) => {
+    root.style.setProperty(`--color-${key}`, value);
+  });
+}
+```
+
+<Info>
+Every color change triggers an immediate CSS variable update, ensuring zero-latency visual feedback.
+</Info>
+
+## Automatic Color Derivation
+
+When you change certain colors, Theme Gen automatically derives related colors to maintain visual harmony:
+
+### Border and Muted Colors
+
+These are automatically calculated as OKLCH mixes between text and background:
+
+```tsx
+if (!lockedColors.has("border")) {
+  const newBorder = mixOklch(currentText, currentBg, 0.82);
+  updateThemeProperty(["colors", "border"], newBorder);
+}
+if (!lockedColors.has("muted")) {
+  const newMuted = mixOklch(currentText, currentBg, 0.55);
+  updateThemeProperty(["colors", "muted"], newMuted);
+}
+```
+
+- **Border**: 82% blend toward background
+- **Muted**: 55% blend toward background
+
+### On-Colors
+
+For colored surfaces like buttons, Theme Gen automatically generates contrasting "on" colors:
+
+```tsx
+const onColorMap: Record<string, string> = {
+  primary: "onPrimary",
+  container: "onContainer",
+  accent: "onAccent",
+  success: "onSuccess",
+  error: "onError",
+  warning: "onWarning",
+};
+```
+
+These ensure text remains readable on colored backgrounds.
+
+<Tip>
+Lock colors using the lock icon to prevent them from being updated during automatic derivation or shuffles.
+</Tip>
+
+## Preview Modes
+
+The live preview works seamlessly across both light and dark modes:
+
+### Mode Switching
+
+Toggle between light and dark modes to see how your colors adapt:
+
+```tsx
+const toggleTheme = () => {
+  const targetIsDark = themeName !== "dark";
+  const targetMode = targetIsDark ? "dark" : "light";
+  const adapted = adaptColorsForMode(
+    theme.colors as Record<string, string>,
+    targetIsDark,
+    lockedColors
+  );
+  setTheme(targetMode, adapted as Partial<typeof theme.colors>);
+};
+```
+
+The `adaptColorsForMode` function intelligently adjusts color lightness values while preserving hues.
+
+## Persistent State
+
+Your theme changes are automatically saved to `localStorage` and synced to the URL, ensuring your work is never lost:
+
+```tsx
+// Auto-save to localStorage
+const savedThemes = JSON.parse(
+  localStorage.getItem("customThemes") || "{}"
+);
+savedThemes[themeNameRef.current] = theme;
+localStorage.setItem("customThemes", JSON.stringify(savedThemes));
+```
+
+<Note>
+The live preview state persists across page refreshes and can be shared via URL.
+</Note>
+
+## Performance
+
+The live preview system is optimized for performance:
+
+- CSS variable updates are batched per theme change
+- Only changed properties trigger re-renders
+- No full page reloads required
+- Smooth transitions between color states
+
+## Related Features
+
+- [URL Sharing](/features/url-sharing) - Share your live preview with others
+- [Color Locking](/features/color-locking) - Prevent specific colors from changing
+- [Export](/features/export) - Export your previewed theme to production formats

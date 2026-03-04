@@ -1,0 +1,321 @@
+---
+title: URL Sharing
+description: Share themes via URL with automatic state synchronization
+---
+
+## Overview
+
+Theme Gen automatically encodes your theme into the URL, allowing you to share your exact color configuration with others. Simply copy the URL and send it - the recipient will see your theme instantly.
+
+## URL Format
+
+Theme URLs use two query parameters:
+
+- `colors` - Compact hex representation of 5 core colors
+- `mode` - Either `light` or `dark`
+
+### Example URL
+
+```
+https://themegen.app/?colors=1a1a1a-ffffff-3b82f6-f5f5f5-8b5cf6&mode=light
+```
+
+This encodes:
+- Text: `#1a1a1a`
+- Background: `#ffffff`
+- Primary: `#3b82f6`
+- Container: `#f5f5f5`
+- Accent: `#8b5cf6`
+- Mode: Light
+
+## Color Encoding
+
+Only 5 colors are encoded in the URL (the "core" colors):
+
+```tsx
+const URL_COLOR_KEYS = ["text", "background", "primary", "container", "accent"] as const;
+```
+
+These are sufficient because all other colors are derived:
+- **border** and **muted** - Mixed from text/background
+- **success**, **error**, **warning** - Fixed hues with primary's lightness
+- **on-colors** - Calculated for contrast
+- **ring** - Same as primary
+
+### Encoding Function
+
+```tsx
+function syncURLParams(theme: Theme, themeName: string) {
+  const compact = URL_COLOR_KEYS
+    .map((key) => theme.colors[key].replace("#", ""))
+    .join("-");
+
+  const params = new URLSearchParams(window.location.search);
+  params.set("colors", compact);
+  params.set("mode", themeName);
+
+  const newURL = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState(null, "", newURL);
+}
+```
+
+This:
+1. Strips `#` from each hex color
+2. Joins with `-` separator
+3. Sets both `colors` and `mode` params
+4. Uses `replaceState` (not `pushState`) to avoid polluting history
+
+<Info>
+The URL updates automatically on every theme change - you always have a shareable link.
+</Info>
+
+## URL Parsing
+
+On page load, the app checks for theme parameters in the URL:
+
+```tsx
+function parseColorsFromURL(): Partial<Theme["colors"]> | null {
+  const params = new URLSearchParams(window.location.search);
+  const colorsParam = params.get("colors");
+  if (!colorsParam) return null;
+
+  const hexValues = colorsParam.split("-");
+  if (hexValues.length !== URL_COLOR_KEYS.length) return null;
+
+  const isValidHex = (h: string) => /^[0-9a-fA-F]{6}$/.test(h);
+  if (!hexValues.every(isValidHex)) return null;
+
+  const colors: Partial<Theme["colors"]> = {};
+  URL_COLOR_KEYS.forEach((key, i) => {
+    (colors as Record<string, string>)[key] = `#${hexValues[i]}`;
+  });
+
+  const text = colors.text!;
+  const bg = colors.background!;
+  colors.border = mixOklch(text, bg, 0.82);
+  colors.muted = mixOklch(text, bg, 0.55);
+
+  if (colors.primary) colors.onPrimary = pickOnColor(colors.primary);
+  if (colors.container) colors.onContainer = pickOnColor(colors.container);
+  if (colors.accent) colors.onAccent = pickOnColor(colors.accent);
+
+  return colors;
+}
+```
+
+Validation checks:
+1. **Parameter exists** - URL has `colors` param
+2. **Correct length** - Exactly 5 hex values
+3. **Valid hex** - Each value is 6 hex digits (no `#`)
+
+If validation passes, the derived colors are calculated on the client.
+
+### Hydration on Load
+
+```tsx
+useEffect(() => {
+  const urlColors = parseColorsFromURL();
+  if (urlColors) {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode") === "dark" ? "dark" : "light";
+    const base = themes[mode];
+    const hydrated: Theme = {
+      ...base,
+      colors: { ...base.colors, ...urlColors },
+    };
+    setThemeName(mode);
+    setTheme(hydrated);
+    updateCSSVariables(hydrated);
+    initializedRef.current = true;
+  } else {
+    // Fall back to localStorage or defaults
+  }
+}, []);
+```
+
+URL params take **priority** over localStorage - if the URL contains a theme, it's used regardless of saved state.
+
+<Tip>
+This means you can share a theme link and the recipient will see it even if they've customized their own theme.
+</Tip>
+
+## Automatic Sync
+
+Every time the theme changes, the URL is updated:
+
+```tsx
+useEffect(() => {
+  if (isRestoringRef.current) {
+    isRestoringRef.current = false;
+  }
+  updateCSSVariables(theme);
+  syncURLParams(theme, themeNameRef.current);  // ← URL sync
+  const savedThemes = JSON.parse(
+    localStorage.getItem("customThemes") || "{}"
+  );
+  savedThemes[themeNameRef.current] = theme;
+  localStorage.setItem("customThemes", JSON.stringify(savedThemes));
+}, [theme]);
+```
+
+This ensures:
+- URL always reflects current state
+- Every edit creates a new shareable URL
+- Browser back/forward navigation is not affected (using `replaceState`)
+
+## Sharing Workflow
+
+1. **Customize your theme** in the Theme Customizer
+2. **Copy the URL** from your browser's address bar
+3. **Send to recipient** via any channel (email, Slack, etc.)
+4. **Recipient opens link** and sees your exact theme
+5. **Recipient can customize** further from your starting point
+
+<Info>
+URL sharing creates a "fork" - the recipient gets their own copy that doesn't affect your original.
+</Info>
+
+## URL vs. localStorage Priority
+
+The loading priority is:
+
+1. **URL parameters** (highest priority)
+2. **localStorage saved theme**
+3. **Default light theme** (fallback)
+
+```tsx
+useEffect(() => {
+  const urlColors = parseColorsFromURL();
+  if (urlColors) {
+    // Use URL theme
+  } else {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme && themes[savedTheme]) {
+      // Use localStorage theme
+    } else {
+      // Use default theme
+    }
+  }
+}, []);
+```
+
+## Derived Colors
+
+The URL only contains 5 colors, but the full palette has 17 colors. Here's how the rest are derived:
+
+### Border and Muted
+
+```tsx
+colors.border = mixOklch(text, bg, 0.82);
+colors.muted = mixOklch(text, bg, 0.55);
+```
+
+Mixed in OKLCH space from text and background.
+
+### On-Colors
+
+```tsx
+if (colors.primary) colors.onPrimary = pickOnColor(colors.primary);
+if (colors.container) colors.onContainer = pickOnColor(colors.container);
+if (colors.accent) colors.onAccent = pickOnColor(colors.accent);
+```
+
+Automatically calculated for 4.5:1 contrast.
+
+### State Colors
+
+These aren't in the URL but are generated when the theme is loaded:
+
+```tsx
+const successHue = 155;
+const errorHue = 25;
+const warningHue = 70;
+
+let success = chroma.oklch(primaryL, safeChroma(primaryL, successHue, 0.75), successHue).hex();
+// Similar for error and warning
+```
+
+They use fixed hues with the primary's lightness, ensuring they match the palette's visual weight.
+
+<Note>
+Because state colors aren't in the URL, customizations to them are not shared. Only the 5 core colors are preserved.
+</Note>
+
+## URL Length
+
+The compact format keeps URLs short:
+
+```
+?colors=1a1a1a-ffffff-3b82f6-f5f5f5-8b5cf6&mode=light
+```
+
+- 6 chars × 5 colors = 30 chars
+- 4 separators = 4 chars
+- Mode parameter = ~11 chars
+- **Total: ~45 chars** (well under URL length limits)
+
+This works in all contexts: email, Slack, Twitter DMs, etc.
+
+## Security Considerations
+
+The URL parser validates all inputs:
+
+```tsx
+const isValidHex = (h: string) => /^[0-9a-fA-F]{6}$/.test(h);
+if (!hexValues.every(isValidHex)) return null;
+```
+
+Invalid URLs fail gracefully:
+- **Invalid hex** → Falls back to localStorage/defaults
+- **Wrong length** → Falls back to localStorage/defaults
+- **Missing params** → Falls back to localStorage/defaults
+
+No risk of XSS or injection - only valid hex colors are accepted.
+
+<Warning>
+Do not manually edit the URL unless you understand the format. Invalid formats will be ignored.
+</Warning>
+
+## Browser History
+
+The system uses `replaceState` instead of `pushState`:
+
+```tsx
+window.history.replaceState(null, "", newURL);
+```
+
+This means:
+- **No history pollution** - Every color change doesn't create a back button entry
+- **Current state only** - The URL reflects the current theme, not a history trail
+- **Clean navigation** - Back button works as expected, not back through every color tweak
+
+## Limitations
+
+### Not Included in URL
+
+- **State colors** (success, error, warning) - Derived from defaults
+- **On-colors** for state colors - Derived from state colors
+- **Ring color** - Same as primary
+- **Lock states** - Session-only, not persisted
+- **Saved themes** - User-specific, stored in localStorage
+
+### Sharing Locked States
+
+If you want to share a theme with specific locked colors for editing:
+1. There's no built-in mechanism for this
+2. The recipient will receive all colors unlocked
+3. They can manually lock colors after loading
+
+## Best Practices
+
+- **Share after finalizing** - URL represents a snapshot, not live edits
+- **Test the link** - Open in incognito to verify it works
+- **Add context** - Tell recipients what you changed if sharing mid-design
+- **Use both modes** - Share separate URLs for light and dark if both are customized
+- **Shorten if needed** - Use a URL shortener for social media (though the URL is already compact)
+
+## Related Features
+
+- [Live Preview](/features/live-preview) - What recipients see when they open your link
+- [Export](/features/export) - Alternative to sharing for one-way distribution
+- [Smart Shuffle](/features/smart-shuffle) - Generate new themes to share

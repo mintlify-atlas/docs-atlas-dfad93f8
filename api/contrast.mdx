@@ -1,0 +1,206 @@
+---
+title: 'Contrast Functions'
+description: 'WCAG contrast ratio calculation and accessibility validation'
+---
+
+## getContrastRatio
+
+Calculates the WCAG contrast ratio between a foreground and background color.
+
+```typescript
+function getContrastRatio(foreground: string, background: string): number
+```
+
+<ParamField path="foreground" type="string" required>
+  Foreground color in any valid CSS color format (hex, rgb, etc.)
+</ParamField>
+
+<ParamField path="background" type="string" required>
+  Background color in any valid CSS color format
+</ParamField>
+
+<ResponseField name="return" type="number">
+  Contrast ratio rounded to 2 decimal places (range: 1 to 21)
+</ResponseField>
+
+### Example
+
+```typescript
+import { getContrastRatio } from './colorUtils';
+
+const ratio1 = getContrastRatio('#000000', '#ffffff');
+console.log(ratio1); // 21 (maximum contrast)
+
+const ratio2 = getContrastRatio('#3b82f6', '#ffffff');
+console.log(ratio2); // ~3.06
+
+const ratio3 = getContrastRatio('#3b82f6', '#1e293b');
+console.log(ratio3); // ~6.89
+```
+
+### WCAG Contrast Requirements
+
+- **AA Normal text**: Minimum 4.5:1
+- **AA Large text** (18pt+ or 14pt+ bold): Minimum 3:1
+- **AAA Normal text**: Minimum 7:1
+- **AAA Large text**: Minimum 4.5:1
+
+---
+
+## getWCAGContrastResult
+
+Calculates the contrast ratio and evaluates it against all WCAG compliance levels.
+
+```typescript
+function getWCAGContrastResult(
+  foreground: string,
+  background: string
+): WCAGContrastResult
+```
+
+<ParamField path="foreground" type="string" required>
+  Foreground color in any valid CSS color format
+</ParamField>
+
+<ParamField path="background" type="string" required>
+  Background color in any valid CSS color format
+</ParamField>
+
+<ResponseField name="return" type="WCAGContrastResult">
+  Object containing the contrast ratio and WCAG compliance results
+</ResponseField>
+
+### Example
+
+```typescript
+import { getWCAGContrastResult } from './colorUtils';
+
+const result = getWCAGContrastResult('#3b82f6', '#ffffff');
+console.log(result);
+// {
+//   ratio: 3.06,
+//   aaNormal: false,   // Fails AA normal (needs 4.5:1)
+//   aaLarge: true,     // Passes AA large (needs 3:1)
+//   aaaNormal: false,  // Fails AAA normal (needs 7:1)
+//   aaaLarge: false    // Fails AAA large (needs 4.5:1)
+// }
+
+const result2 = getWCAGContrastResult('#1e293b', '#ffffff');
+console.log(result2);
+// {
+//   ratio: 14.56,
+//   aaNormal: true,
+//   aaLarge: true,
+//   aaaNormal: true,
+//   aaaLarge: true
+// }
+```
+
+### Usage in UI
+
+```typescript
+const result = getWCAGContrastResult(textColor, bgColor);
+
+if (!result.aaNormal) {
+  console.warn('Text does not meet WCAG AA standards for normal text');
+}
+
+if (result.aaaNormal) {
+  console.log('Text meets the highest WCAG AAA standard!');
+}
+```
+
+---
+
+## relativeLuminance
+
+Calculates the relative luminance of a color according to WCAG specifications. This is an internal function used by contrast ratio calculations.
+
+```typescript
+function relativeLuminance(color: string): number
+```
+
+<ParamField path="color" type="string" required>
+  Color in hex format (e.g., '#ff0000')
+</ParamField>
+
+<ResponseField name="return" type="number">
+  Relative luminance value (0 to 1, where 0 is black and 1 is white)
+</ResponseField>
+
+### Example
+
+```typescript
+// Note: This is an internal function, typically not called directly
+
+const lum1 = relativeLuminance('#ffffff');
+console.log(lum1); // 1.0
+
+const lum2 = relativeLuminance('#000000');
+console.log(lum2); // 0.0
+
+const lum3 = relativeLuminance('#ff0000');
+console.log(lum3); // ~0.2126
+```
+
+---
+
+## Types
+
+### WCAGContrastResult
+
+Interface representing the result of a WCAG contrast check.
+
+```typescript
+interface WCAGContrastResult {
+  ratio: number;       // The calculated contrast ratio (1-21)
+  aaNormal: boolean;   // Passes WCAG AA for normal text (≥4.5:1)
+  aaLarge: boolean;    // Passes WCAG AA for large text (≥3:1)
+  aaaNormal: boolean;  // Passes WCAG AAA for normal text (≥7:1)
+  aaaLarge: boolean;   // Passes WCAG AAA for large text (≥4.5:1)
+}
+```
+
+### Properties
+
+<ResponseField name="ratio" type="number">
+  The calculated contrast ratio, rounded to 2 decimal places
+</ResponseField>
+
+<ResponseField name="aaNormal" type="boolean">
+  `true` if contrast ratio is ≥4.5:1 (WCAG AA for normal text)
+</ResponseField>
+
+<ResponseField name="aaLarge" type="boolean">
+  `true` if contrast ratio is ≥3:1 (WCAG AA for large text: 18pt+ or 14pt+ bold)
+</ResponseField>
+
+<ResponseField name="aaaNormal" type="boolean">
+  `true` if contrast ratio is ≥7:1 (WCAG AAA for normal text)
+</ResponseField>
+
+<ResponseField name="aaaLarge" type="boolean">
+  `true` if contrast ratio is ≥4.5:1 (WCAG AAA for large text)
+</ResponseField>
+
+### Example
+
+```typescript
+import { getWCAGContrastResult, WCAGContrastResult } from './colorUtils';
+
+function validateColorPair(fg: string, bg: string): WCAGContrastResult {
+  const result = getWCAGContrastResult(fg, bg);
+  
+  if (result.aaaNormal) {
+    console.log('Excellent! Meets highest standards');
+  } else if (result.aaNormal) {
+    console.log('Good! Meets standard requirements');
+  } else if (result.aaLarge) {
+    console.log('Use only for large text');
+  } else {
+    console.log('Insufficient contrast');
+  }
+  
+  return result;
+}
+```

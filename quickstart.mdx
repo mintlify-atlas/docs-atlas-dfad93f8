@@ -1,80 +1,195 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with Theme Gen in minutes. Install, run, and create your first accessible color theme.
 ---
 
-## Get started in three steps
+## Installation
 
-Get your documentation site running locally and make your first customization.
+Clone the repository and install dependencies with your preferred package manager.
 
-### Step 1: Set up your local environment
+<CodeGroup>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash npm
+git clone https://github.com/yourusername/theme-gen.git
+cd theme-gen
+npm install
+```
 
-### Step 2: Deploy your changes
+```bash yarn
+git clone https://github.com/yourusername/theme-gen.git
+cd theme-gen
+yarn install
+```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```bash pnpm
+git clone https://github.com/yourusername/theme-gen.git
+cd theme-gen
+pnpm install
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+</CodeGroup>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Running the Development Server
 
-### Step 3: Go live
+Start the local development server with Turbopack for fast hot module reloading:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+```bash
+npm run dev
+```
 
-## Next steps
+Open [http://localhost:3000](http://localhost:3000) in your browser to see Theme Gen in action.
 
-Now that you have your docs running, explore these key features:
+<Note>
+The dev server uses Next.js 15 with Turbopack for optimal performance during development.
+</Note>
+
+## Creating Your First Theme
+
+<Steps>
+
+<Step title="Pick Your Colors">
+Click on any color swatch in the sidebar to open the color picker. Theme Gen provides five core colors that you can customize:
+
+- **Text** — Primary text color
+- **Background** — Page background
+- **Primary** — Buttons, links, and key actions
+- **Container** — Cards and container backgrounds
+- **Accent** — Secondary highlights and CTAs
+
+As you adjust colors, the entire preview updates in real-time.
+</Step>
+
+<Step title="Check WCAG Contrast">
+Theme Gen automatically audits your palette against WCAG accessibility standards. The sidebar shows contrast ratio badges for each color pair:
+
+- Text/Background: **7:1** (AAA)
+- Primary/Background: **3:1** (AA)
+- Text/Container: **4.5:1** (AA)
+- Accent pairs: **3:1** (AA)
+
+<Tip>
+Use the **Shuffle** button to generate random palettes that automatically pass all contrast checks. You can lock individual colors before shuffling to preserve them.
+</Tip>
+</Step>
+
+<Step title="Toggle Light & Dark Mode">
+Click the theme toggle in the top toolbar to switch between light and dark modes. Each mode maintains its own independent color palette.
+
+Try creating complementary themes for both modes to give users a complete experience.
+</Step>
+
+<Step title="Preview Across Components">
+Switch between **Web** and **Mobile** views using the preview toggle to see how your theme looks across different UI patterns:
+
+- Hero sections
+- Pricing tables  
+- Login forms
+- Mobile app screens
+- Wallet interfaces
+
+This helps ensure your theme works well in real-world scenarios.
+</Step>
+
+</Steps>
+
+## Sharing Your Theme
+
+Theme Gen automatically encodes your theme in the URL. Simply copy the URL from your browser to share your palette with others.
+
+### URL Format
+
+```
+/?colors=1a1625-faf9fc-4F46E5-eeedf2-0284C7&mode=light
+```
+
+The colors are encoded as compact hex values in this order:
+
+```
+text-background-primary-container-accent
+```
+
+<Info>
+Anyone with the URL can open it directly — no export or import needed. The theme loads instantly from the URL parameters.
+</Info>
+
+## Exporting Your Theme
+
+Click the **Export** button in the toolbar to open the export modal. Theme Gen supports multiple formats and color systems.
+
+### Export Options
+
+**Formats:**
+- CSS Variables
+- Tailwind CSS (v3 & v4)
+- SCSS/Sass
+- SwiftUI
+- React Native
+
+**Color Formats:**
+- HEX (`#4F46E5`)
+- RGB (`rgb(79, 70, 229)`)
+- HSL (`hsl(244, 76%, 59%)`)
+- OKLCH (`oklch(0.58 0.21 265)`)
+
+**Mode Options:**
+- Light only
+- Dark only  
+- Both (with media query support)
+
+### Example: CSS Variables Export
+
+Here's what the exported CSS looks like for both light and dark modes:
+
+```css
+:root {
+  --color-text: #1a1625;
+  --color-background: #faf9fc;
+  --color-primary: #4F46E5;
+  --color-container: #eeedf2;
+  --color-accent: #0284C7;
+}
+
+.dark {
+  --color-text: #ede9f5;
+  --color-background: #1a1625;
+  --color-primary: #818CF8;
+  --color-container: #2a2735;
+  --color-accent: #22D3EE;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #ede9f5;
+    --color-background: #1a1625;
+    --color-primary: #818CF8;
+    --color-container: #2a2735;
+    --color-accent: #22D3EE;
+  }
+}
+```
+
+<Tip>
+Click the copy button in the export modal to instantly copy your theme code to the clipboard.
+</Tip>
+
+## Next Steps
 
 <CardGroup cols={2}>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
+<Card title="Live Preview" icon="eye" href="/features/live-preview">
+Learn how real-time preview updates work across your theme
 </Card>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
+<Card title="Export Formats" icon="download" href="/guides/exporting">
+Learn about all export options and how to use them in your projects
 </Card>
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
+<Card title="API Reference" icon="code" href="/api/theme-context">
+Dive into the theme structure and color utilities
 </Card>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
+<Card title="Accessibility" icon="universal-access" href="/guides/accessibility">
+Understand WCAG standards and contrast requirements
 </Card>
 
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
